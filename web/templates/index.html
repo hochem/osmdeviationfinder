@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leaflet.css') }}" />
+<script src="{{ url_for('static', filename='js/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='js/addons/upload.min.js') }}"></script>
+{% endblock %}
+{% block navigation %}
+{{ super() }}
+{% endblock %}
+{% block content %}
+<div class="uk-grid" data-uk-grid-margin>
+<div class="uk-width-medium-1-1">
+    <div class="uk-text-center">
+        <div id="mappanel" class="uk-panel uk-panel-box" style="padding-bottom: 0px"><div id="map" class="uk-panel-teaser uk-panel-box">
+            </div>
+        </div>
+
+    </div>
+</div>
+</div>
+<div class="uk-margin uk-text-center uk-alert-warning">The currently uploaded areas contain lots of features (>1500), loading a map will take up to 30-60 seconds.<br>To view maps with lots of features, you will also need decent hardware.<br>Maps with less features will load faster and the experience will be more fluid.<br></div>
+<br/><h3 class="uk-text-center">Create Your Own Deviation Map</h3>
+<div id="upload-drop" class="uk-placeholder uk-text-center">
+    <i class="uk-icon-cloud-upload uk-icon-medium uk-text-muted uk-margin-small-right"></i> Attach Shapefile Archives (2MB Limit) by dropping them here or <a class="uk-form-file">selecting one<input name="file" id="upload-select" type="file"></a>.
+</div>
+
+<div id="progressbar" class="uk-progress uk-hidden">
+    <div class="uk-progress-bar" style="width: 0%;">0%</div>
+</div>
+
+<script>
+    $(function(){
+        var progressbar = $("#progressbar"),
+                bar         = progressbar.find('.uk-progress-bar'),
+                settings    = {
+
+                    action: '/upload', // upload url
+
+                    allow : '*.(zip|rar|json)', // allow only
+
+                    loadstart: function() {
+                        bar.css("width", "0%").text("0%");
+                        progressbar.removeClass("uk-hidden");
+                    },
+
+                    progress: function(percent) {
+                        percent = Math.ceil(percent);
+                        bar.css("width", percent+"%").text(percent+"%");
+                    },
+
+                    allcomplete: function(response) {
+
+                        bar.css("width", "100%").text("100%");
+
+                        setTimeout(function(){
+                            progressbar.addClass("uk-hidden");
+                        }, 250);
+                          window.location.href = response;
+                    }
+                };
+
+        var select = $.UIkit.uploadSelect($("#upload-select"), settings),
+                drop   = $.UIkit.uploadDrop($("#upload-drop"), settings);
+    });
+
+</script>
+<br/><br/>
+<div class="uk-grid" data-uk-grid-margin>
+    <div class="uk-width-medium-1-3">
+        <div class="uk-grid">
+            <div class="uk-width-1-6">
+                <i class="uk-icon-upload uk-icon-large uk-text-primary"></i>
+            </div>
+            <div class="uk-width-5-6">
+                <h2 class="uk-h3">Upload Reference Data</h2>
+                <p>Upload your own reference dataset as a shapefile zip archive.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="uk-width-medium-1-3">
+        <div class="uk-grid">
+            <div class="uk-width-1-6">
+                <i class="uk-icon-search uk-icon-large uk-text-primary"></i>
+            </div>
+            <div class="uk-width-5-6">
+                <h2 class="uk-h3">Find Deviations</h2>
+                <p>A roadmatching algorithm is used to find geometrical and attributive deviations between your dataset and the OpenStreetMap dataset.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="uk-width-medium-1-3">
+        <div class="uk-grid">
+            <div class="uk-width-1-6">
+                <i class="uk-icon-share uk-icon-large uk-text-primary"></i>
+            </div>
+            <div class="uk-width-5-6">
+                <h2 class="uk-h3">Share and Browse Deviations</h2>
+                <p>You can preview and export the calculated deviations as WM(T)S tiles and GeoJSON. Share deviation maps to help other people find bugs.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="uk-grid" data-uk-grid-margin>
+    <div class="uk-width-medium-1-3">
+        <div class="uk-grid">
+            <div class="uk-width-1-6">
+                <i class="uk-icon-folder-open uk-icon-large uk-text-primary"></i>
+            </div>
+            <div class="uk-width-5-6">
+                <h2 class="uk-h3">Manage your Data</h2>
+                <p>Register to have better control over your deviation maps.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="uk-width-medium-1-3">
+        <div class="uk-grid">
+            <div class="uk-width-1-6">
+                <i class="uk-icon-cogs uk-icon-large uk-text-primary"></i>
+            </div>
+            <div class="uk-width-5-6">
+                <h2 class="uk-h3">Custom Matching Parameters</h2>
+                <p>Choose different parameters for the roadmatching algorithm to get your desired result.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="uk-width-medium-1-3">
+        <div class="uk-grid">
+            <div class="uk-width-1-6">
+                <i class="uk-icon-bug uk-icon-large uk-text-primary"></i>
+            </div>
+            <div class="uk-width-5-6">
+                <h2 class="uk-h3">Use Deviations to find Bugs</h2>
+                <p>Import deviation maps as WM(T)S layers into your favourite GIS or the JOSM editor to find and correct bugs in the datasets.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block offcanvasnav %}
+{{ super() }}
+{% endblock %}
+{% block body_js %}
+<script>
+
+if(map){map.remove();}
+$("#map").remove();
+ $("#mappanel").html('<div id="map" class="uk-panel-teaser uk-panel-box" tabindex="0" style="position: relative;"></div>');
+
+   var map = null;
+    map = L.map('map').setView([47.7,14], 7);
+var streets = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{
+  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+}).addTo(map);
+
+  $.getJSON("{{url_for('geojsonapi.listedbboxes')}}", function(data) {
+
+   var referenceStyle = {
+            "color": "#44ff44",
+            "weight": 2,
+            "opacity": 0.6
+        };
+
+        function oneachfeatureref(feature, layer) {
+
+            layer.on('mouseover', function (e) {
+                layer.setStyle({
+                    weight: 5
+                });
+            });
+
+            layer.on('mouseout', function (e) {
+                layer.setStyle({
+                    weight: 2
+                });
+            });
+
+            layer.on('click', function (e) {
+
+                layer.bindPopup("<b>"+feature.properties.title+"</b><br /><br /><a href='/"+feature.properties.uid+"'>Show Map</a>").openPopup();
+
+                // window.location.href = "{{url_for('basic.browse')}}";
+            });
+        }
+
+        var mapslayer = L.geoJson(data,{
+            style: referenceStyle,
+            onEachFeature: oneachfeatureref
+        }).addTo(map);
+  });
+</script>
+{% endblock %}

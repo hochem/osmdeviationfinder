@@ -1,0 +1,64 @@
+        <div class="uk-grid uk-margin-large-bottom uk-margin-large-top" data-uk-grid-margin>
+                <div class="uk-width-medium-1-1">
+            <h2 class="uk-text-center">Data Processing and Line Matching</h2>
+            <h3 id="status" class="uk-text-center"></h3>
+
+            <form id="process" class="uk-form">
+                <legend>Line Segmentation</legend>
+                                <fieldset data-uk-margin>
+                    <dl class="uk-description-list uk-description-list-horizontal">
+                        <dt>Presplit layers</dt>
+                        <dd> <input name="presplitosm" type="checkbox" checked id="form-s-c11"><label for="form-s-c11"> Presplit OSM Layer</label><br></dd>
+                        <dd> <input name="presplitref" type="checkbox" checked id="form-s-c12"><label for="form-s-c12"> Presplit Reference Layer</label><br>Lines will be splitted on every intersection before the actual splitting/harmonization. By presplitting the lines in both datasets, a better result is achivable.</dd>
+                        <dd><input name="searchradius" type="text" value="0.0005" class="uk-margin-small-top" id="form-s-c16"><label for="form-s-c16"> Distance to search for in meter.</label><br></dd>
+                        <dt>Junction matching</dt>
+                        <dd> <input name="junctionmatch1" type="checkbox" checked id="form-s-c13"><label for="form-s-c13"> Use junction matching</label><br></dd>
+                        <dd> <input name="junctionmatch2" type="checkbox" checked id="form-s-c14"><label for="form-s-c14"> Export junction matching vectors</label><br></dd>
+                        <dd> <input name="junctionmatch3" type="checkbox" id="form-s-c15"><label for="form-s-c15"> Export junction matching vectors</label><br></dd>
+                        <br>
+                    </dl>
+                </fieldset>
+            </form>
+                <div class="uk-text-center">
+                    <a id="processbutton" class="uk-button uk-width-1-4" href="#">Process Data</a> <a class="uk-button uk-width-1-4" href="{{url_for('devmap.delete',uid=uid)}}">Abort and Delete Data</a>
+                </div>
+            </form>
+        </div>
+            </div>
+ <script>
+$( "#processbutton" ).click(function() {
+
+    $("#status").html("Processing Data...");
+
+    var last_response_len = false;
+    $.ajax({type: "POST",
+            url:"{{url_for('devmap.process',uid=uid)}}",
+         data: $("#process").serialize(),
+        xhrFields: {
+            onprogress: function(e)
+            {
+                var this_response, response = e.currentTarget.response;
+                if(last_response_len === false)
+                {
+                    this_response = response;
+                    last_response_len = response.length;
+                }
+                else
+                {
+                    this_response = response.substring(last_response_len);
+                    last_response_len = response.length;
+                }
+                $("#status").html(this_response);
+            }
+        },
+        success: function(data)
+           {
+               $.get("{{url_for('devmap.linematch',uid=uid)}}").done(function(data) {
+                 var content = $(data);
+                 $("#content").empty().append(content);
+                });
+           }
+    });
+});
+
+</script>

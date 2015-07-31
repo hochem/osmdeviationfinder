@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en-gb" dir="ltr">
+
+    <head>
+    {% block head %}
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>OpenStreetMap - Road Deviation Finder</title>
+        <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+        <link rel="apple-touch-icon-precomposed" href="images/apple-touch-icon.png">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/nprogress.css') }}" />
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/uikit.gradient.min.css') }}" />
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/addons/uikit.addons.css') }}" />
+        <script src="{{ url_for('static', filename='js/jquery.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/nprogress.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/uikit.min.js') }}"></script>
+        <style>
+            #map {height: 400px;}
+            .info {
+			padding: 6px 8px;
+			font: 14px/16px Arial, Helvetica, sans-serif;
+			background: white;
+			background: rgba(255,255,255,0.8);
+			box-shadow: 0 0 15px rgba(0,0,0,0.2);
+			border-radius: 5px;
+		}
+		.info h4 {
+			margin: 0 0 5px;
+			color: #777;
+		}
+
+		.legend {
+			text-align: left;
+			line-height: 18px;
+			color: #555;
+		}
+		.legend i {
+			width: 18px;
+			height: 18px;
+			float: left;
+			margin-right: 8px;
+			opacity: 0.7;
+		}
+        </style>
+    {% endblock %}
+    </head>
+
+    <body>
+    <div class="uk-container uk-container-center" style="min-width:100%;">
+    {% block navigation %}
+            <div class="uk-text-right" >
+                    <nav class="uk-subnav">
+                        <a class="uk-navbar-brand uk-hidden-small" href="{{url_for('basic.index')}}">OSM Deviation Finder</a>
+                    <ul class="uk-subnav uk-subnav-pill uk-hidden-small">
+
+                        <!--<li>-->
+                            <!--<a href="{{url_for('basic.about')}}">About</a>-->
+                        <!--</li>-->
+                        <li>
+                            <a href="{{url_for('devmap.upload_file')}}">Upload Data</a>
+                        </li>
+                        <li>
+                            <a href="{{url_for('basic.browse')}}">Browse Deviation Maps</a>
+                        </li>
+                        <li>
+                            <a href="{{url_for('basic.documentation')}}">Documentation</a>
+                        </li>
+                        {% if current_user.is_authenticated() %}
+                         <li>
+                            <a href="{{url_for('basic.manage')}}">Manage Maps</a>
+                        </li>
+                        <li>
+                            <a href="{{url_for('basic.logout')}}">Logout ({{current_user.username}})</a>
+                        </li>
+                        {% else %}
+                        <li>
+                            <a href="#my-id" data-uk-modal>Login</a>
+                        </li>
+                        <li><a href="#my-id2" data-uk-modal>Register</a></li>
+                        {% endif %}
+                    </ul>
+                        <a href="#offcanvas" class="uk-navbar-toggle uk-visible-small" data-uk-offcanvas></a>
+                    <div class="uk-navbar-brand uk-navbar-center uk-visible-small">OSM Deviation Finder</div><br/>
+                    </nav>
+                </div>
+    {% endblock %}
+    <div id="content">
+    {% block content %}
+    {% endblock %}
+    </div>
+    {% block offcanvasnav %}
+        <div id="offcanvas" class="uk-offcanvas">
+            <div class="uk-offcanvas-bar">
+                <ul class="uk-nav uk-nav-offcanvas">
+                                           <!--<li>-->
+                            <!--<a href="{{url_for('basic.about')}}">About</a>-->
+                        <!--</li>-->
+                        <li>
+                            <a href="{{url_for('basic.browse')}}">Browse Deviation Maps</a>
+                        </li>
+                        <li>
+                            <a href="{{url_for('basic.documentation')}}">Documentation</a>
+                        </li>
+                        {% if current_user.is_authenticated() %}
+                         <li>
+                            <a href="{{url_for('basic.manage')}}">Manage Deviations</a>
+                        </li>
+                        <li>
+                            <a href="{{url_for('basic.logout')}}">Logout ({{current_user.username}})</a>
+                        </li>
+                        {% else %}
+                        <li>
+                            <a href="#my-id" data-uk-modal>Login</a>
+                        </li>
+                        <li><a href="#my-id2" data-uk-modal>Register</a></li>
+                        {% endif %}
+                </ul>
+            </div>
+        </div>
+        <div id="my-id" class="uk-modal">
+    <div class="uk-modal-dialog">
+        <a class="uk-modal-close uk-close"></a>
+        <h2>Login</h2>
+        <form id="loginform" class="uk-panel uk-panel-box-secondary uk-form">
+            <div class="uk-form-row">
+                <input class="uk-width-1-1 uk-form-large" type="text" name="email" placeholder="e-Mail">
+            </div>
+            <div class="uk-form-row">
+                <input class="uk-width-1-1 uk-form-large" type="text" name="password" placeholder="Password">
+            </div>
+            <div class="uk-form-row">
+                <div id="errormessage" class="uk-width-1-1 uk-alert-danger uk-text-center"></div>
+            </div>
+            <div class="uk-form-row">
+                <a class="uk-width-1-1 uk-button uk-button-large" id="login" href="#">Login</a>
+            </div>
+            <div class="uk-form-row uk-text-small">
+                <label class="uk-float-left"><input type="checkbox" name="remember"> Remember Me</label>
+                <a class="uk-float-right uk-link uk-link-muted" href="#">Forgot Password?</a>
+            </div>
+        </form>
+    </div>
+</div>
+<div id="my-id2" class="uk-modal">
+    <div class="uk-modal-dialog">
+        <a class="uk-modal-close uk-close"></a>
+        <h2>Register</h2>
+        <form id="registerform" class="uk-panel uk-panel-box-secondary uk-form">
+            <div class="uk-form-row">
+                <input class="uk-width-1-1 uk-form-large" type="text" name="username" placeholder="Username">
+            </div>
+            <div class="uk-form-row">
+                <input class="uk-width-1-1 uk-form-large" type="text" name="email" placeholder="e-Mail">
+            </div>
+            <div class="uk-form-row">
+                <input class="uk-width-1-1 uk-form-large" type="text" name="password" placeholder="Password">
+            </div>
+            <div class="uk-form-row">
+                <a class="uk-width-1-1 uk-button uk-button-large" id="register" href="#">Register</a>
+            </div>
+        </form>
+    </div>
+</div>
+        {% endblock %}
+     {% block body_js %}
+    {% endblock %}
+    </div>
+    <script type="text/javascript">
+$(document).ajaxSend(
+  function(event,request,settings){
+NProgress.start();
+  }
+);
+$(document).ajaxStop(
+  function(event,request,settings){
+NProgress.done();
+  }
+);
+
+$( "#login" ).click(function() {
+ var posting = $.post( "{{url_for('basic.login')}}", $( "#loginform" ).serialize() );
+  posting.done(function( data ) {
+      location.reload();
+}).fail(function() {
+    $("#errormessage").text("Wrong password or username.");
+  });
+});
+$( "#register" ).click(function() {
+ var posting = $.post( "{{url_for('basic.register')}}", $( "#registerform" ).serialize() );
+  posting.done(function( data ) {
+  location.reload();
+}).fail(function() {
+    $("#errormessage").text("Could not register.");
+  })
+ ;});
+$( "#registerform" ).keypress(function (e) {
+ var key = e.which;
+ if(key == 13)  // the enter key code
+  {
+ var posting = $.post( "{{url_for('basic.register')}}", $( "#registerform" ).serialize() );
+  posting.done(function( data ) {
+  location.reload();});
+  }
+});
+$( "#loginform" ).keypress(function (e) {
+ var key = e.which;
+ if(key == 13)  // the enter key code
+  {
+ var posting = $.post( "{{url_for('basic.login')}}", $( "#loginform" ).serialize() );
+  posting.done(function( data ) {
+  location.reload();}).fail(function() {
+    $("#errormessage").text("Wrong password or username.");
+  });
+  }
+});
+
+</script>
+    </body>
+</html>

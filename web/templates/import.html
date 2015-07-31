@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block head %}
+{{ super() }}
+{% endblock %}
+{% block navigation %}
+{{ super() }}
+{% endblock %}
+{% block content %}
+<div class="uk-grid uk-margin-large-bottom uk-margin-large-top" data-uk-grid-margin>
+                <div class="uk-width-medium-1-1">
+            <h2 class="uk-text-center">Data Import</h2>
+            <h3>Options for: Shapefile Import</h3>
+            <form id="import" class="uk-form" method="POST" action="{{url_for('devmap.import_to_db',uid=uid)}}">
+            <fieldset data-uk-margin>
+            <dl class="uk-description-list uk-description-list-horizontal">
+                <dt>Source Shapefile</dt>
+                <dd><select id="shapefile" name="shapefile" value="{{fdata['shapefile'] if fdata != None}}" class="uk-form uk-form-width-large">
+                {% for shapefile in shapefiles %}
+                <option>{{ shapefile.name|safe }}</option>
+                {% else %}
+                <option>No Shapefile found!</option>
+                {% endfor %}
+                </select><br/><br/>If the Zipfile contains multiple Shapefiles, the Shapefile containing the Road Network should be chosen.
+                    <br/>Currently only shapefiles with the spatial reference EPSG: 4326 are supported.</dd><br/>
+                </select><br/>
+<dt>Map Title</dt>
+                <dd><input name="title" type="text" value="{{fdata['title'] if fdata != None}}" placeholder="My Deviation Map" class="uk-form uk-form-width-medium"/> Map title</dd><br>
+                <dt>Data Source</dt>
+                <dd><input name="source" type="text" value="{{fdata['datasource'] if fdata != None}}" placeholder="Datenquelle: Land Tirol - data.tirol.gv.at" class="uk-form uk-form-width-large"/> The source of the data you are uploading.</dd><br>
+                <dt>License</dt>
+                <dd><input name="license" type="text" value="{{fdata['datalicense'] if fdata != None}}" placeholder="Creative Commons Namensnennung 3.0 Österreich Lizenz (CC BY 3.0 AT)" class="uk-form uk-form-width-large"/> The license of the data you are uploading.</dd><br>
+                <dt>Custom WMS Basemap</dt>
+                <dd><input name="wmsurl" type="text" value="{{fdata['wmsurl'] if fdata != None}}" placeholder="https://gis.tirol.gv.at/arcgis/services/Service_Public/oph05_wms/MapServer/WMSServer" class="uk-form uk-form-width-large"/> URL of WMS</dd><br>
+                <dd><input name="wmslayer" type="text" value="{{fdata['wmslayer'] if fdata != None}}" placeholder="Image"/> WMS Layername</dd><br>
+                <dd><input name="wmsformat" type="text" value="{{fdata['wmsformat'] if fdata != None}}" placeholder="image/jpeg"/> WMS output format</dd><br>
+            </dl>
+            </fieldset><br/>{% if error %}<div class="uk-alert-danger uk-width-1-2 uk-container-center uk-text-center"> {{ error }}</div><br/>{% endif %}
+                <div class="uk-text-center">
+                    <a id="postbtn" class="uk-button uk-width-1-4" href="#">Import Data to DB</a> <a class="uk-button uk-width-1-4" href="{{url_for('devmap.delete',uid=uid)}}">Abort and Delete Data</a>
+                </div>
+            </form>
+        </div>
+            </div>
+{% endblock %}
+{% block offcanvasnav %}
+{{ super() }}
+{% endblock %}
+{% block body_js %}
+<script>
+//$( "#postbtn" ).click(function() {
+//var posting = $.post( "{{url_for('devmap.import_to_db',uid=uid)}}", $( "#import" ).serialize() );
+//  posting.done(function( data ) {
+//      window.location.href = "{{url_for('devmap.osm_download',uid=uid)}}";
+//});
+//});
+$( "#postbtn" ).click(function() {
+$( "#import" ).submit();
+});
+
+</script>
+{% endblock %}

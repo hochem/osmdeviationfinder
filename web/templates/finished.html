@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block head %}
+{{ super() }}
+{% endblock %}
+{% block navigation %}
+{{ super() }}
+{% endblock %}
+{% block map %}
+{% endblock %}
+{% block content %}
+<div class="uk-grid uk-margin-large-bottom uk-margin-large-top" data-uk-grid-margin>
+    <div class="uk-width-medium-1-1">
+        <h2 class="uk-text-center">Deviation Map Creation Finished</h2>
+        <h3 id="status" class="uk-text-center">{% if error %} {{ error }} {% endif %}</h3>
+        <h3>Listed Map</h3>
+        <form id="finished" class="uk-form">
+            <fieldset data-uk-margin>
+                <dl class="uk-description-list uk-description-list-horizontal">
+                    <dt>Listed Map</dt>
+                    <dd>
+                        <input name="listed" type="checkbox" checked> Export as Listed Map with the following title:
+                        <input name="title" type="text" value="{{ dm.title }}" class="uk-form uk-form-small uk-form-width-medium">
+                        <br>
+                    </dd>
+                </dl>
+            </fieldset>
+        </form>
+        <div class="uk-text-center">
+            <a id="showmapbutton" class="uk-button uk-width-1-4" href="#">Show Map</a> <a id="showlistedmapsbutton" class="uk-button uk-width-1-4" href="#">Browse Listed Maps</a> <a class="uk-button uk-width-1-4" href="{{url_for('devmap.delete',uid=uid)}}">Abort and Delete Data</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block offcanvasnav %}
+{{ super() }}
+{% endblock %}
+{% block body_js %}
+<script>
+    $( "#showmapbutton" ).click(function() {
+        var posting = $.post( "{{url_for('devmap.finished',uid=uid)}}", $( "#finished" ).serialize());
+        posting.done(function( data ) {
+            window.location.href = "{{url_for('basic.deviationmap',uid=uid)}}";
+        });
+    });
+    $( "#showlistedmapsbutton" ).click(function() {
+        var posting = $.post( "{{url_for('devmap.finished',uid=uid)}}", $( "#finish" ).serialize());
+        posting.done(function( data ) {
+            window.location.href = "{{url_for('basic.browse')}}";
+        });
+    });
+</script>
+{% endblock %}

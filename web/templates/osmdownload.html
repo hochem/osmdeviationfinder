@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leaflet.css') }}" />
+<script src="{{ url_for('static', filename='js/leaflet.js') }}"></script>
+{% endblock %}
+{% block navigation %}
+{{ super() }}
+{% endblock %}
+{% block content %}
+<div class="uk-grid" data-uk-grid-margin>
+    <div class="uk-width-medium-1-1">
+        <div class="uk-text-center">
+            <div id="mappanel" class="uk-panel uk-panel-box">
+                <div id="map" class="uk-panel-teaser uk-panel-box">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="uk-grid uk-margin-large-bottom uk-margin-large-top" data-uk-grid-margin>
+    <div class="uk-width-medium-1-1">
+        <h2 class="uk-text-center">Data Import</h2>
+        <h3>Fetch OSM Data for the shown Extend?</h3>
+        <h3 id="status" class="uk-text-center"></h3>
+        <form id="import" class="uk-form">
+            <div class="uk-grid uk-align-center">
+                <div class="uk-width-1-1 uk-margin-bottom"> <span class="uk-form-label">Select which <a href="http://wiki.openstreetmap.org/wiki/Key:highway" target="_blank">types of roads</a> should be <b>excluded</b>:</span></div>
+                <div class="uk-width-1-3">Roads
+                    <div class="uk-form-row">
+                        <div class="uk-form-controls">
+                            <input name="motorway" type="checkbox" id="form-s-c11"><label for="form-s-c11">motorway</label><br>
+                            <input name="trunk" type="checkbox" id="form-s-c12"><label for="form-s-c12">trunk</label><br>
+                            <input name="primary" type="checkbox" id="form-s-c13"><label for="form-s-c13">primary</label><br>
+                            <input name="secondary" type="checkbox" id="form-s-c14"><label for="form-s-c14">secondary</label><br>
+                            <input name="tertiary" type="checkbox" id="form-s-c15"><label for="form-s-c15">tertiary</label><br>
+                            <input name="unclassified"  type="checkbox" id="form-s-c16"><label for="form-s-c16">unclassified</label><br>
+                            <input name="residential" type="checkbox" id="form-s-c17"><label for="form-s-c17">residential</label><br>
+                            <input name="service" type="checkbox" id="form-s-c18"><label for="form-s-c18">service</label><br>
+                        </div>
+                    </div></div>
+                <div class="uk-width-1-3">Link roads
+                    <div class="uk-form-row">
+                        <div class="uk-form-controls">
+                            <input name="motorway_link" type="checkbox" id="form-s-c21"><label for="form-s-c21">motorway_link</label><br>
+                            <input name="trunk_link" type="checkbox" id="form-s-c22"><label for="form-s-c22">trunk_link</label><br>
+                            <input name="primary_link" type="checkbox" id="form-s-c23"><label for="form-s-c23">primary_link</label><br>
+                            <input name="secondary_link" type="checkbox" id="form-s-c24"><label for="form-s-c24">secondary_link</label><br>
+                            <input name="tertiary_link" type="checkbox" id="form-s-c25"><label for="form-s-c25">tertiary_link</label><br>
+                        </div>
+                    </div></div>
+                <div class="uk-width-1-3">Special road types
+                    <div class="uk-form-row">
+                        <div class="uk-form-controls">
+                            <input name="living_street" type="checkbox" id="form-s-c31"><label for="form-s-c31">living_street</label><br>
+                            <input name="pedestrian"  type="checkbox" id="form-s-c32"><label for="form-s-c32">pedestrian</label><br>
+                            <input name="track"  type="checkbox" checked id="form-s-c33"><label for="form-s-c33">track</label><br>
+                            <input name="path" type="checkbox" checked id="form-s-c36"><label for="form-s-c36">path</label><br>
+                            <input name="footway" type="checkbox" checked id="form-s-c36"><label for="form-s-c36">footway</label><br>
+                            <input name="cycleway" type="checkbox" checked id="form-s-c36"><label for="form-s-c36">cycleway</label><br>
+                            <input name="bridleway" type="checkbox" checked id="form-s-c36"><label for="form-s-c36">bridleway</label><br>
+                            <input name="steps" type="checkbox" checked id="form-s-c36"><label for="form-s-c36">steps</label><br>
+                            <input name="bus_guideway"  type="checkbox" id="form-s-c34"><label for="form-s-c34">bus_guideway</label><br>
+                            <input name="raceway"  type="checkbox" id="form-s-c35"><label for="form-s-c35">raceway</label><br>
+                            <input name="road" type="checkbox" id="form-s-c36"><label for="form-s-c36">road</label><br>
+                        </div>
+                    </div></div>
+            </div>
+            <div class="uk-text-center">
+                <a id="postbtn" class="uk-button uk-width-1-4" href="#">Download OSM Data</a> <a class="uk-button uk-width-1-4" href="{{url_for('devmap.delete',uid=uid)}}">Abort and Delete Data</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block offcanvasnav %}
+{{ super() }}
+{% endblock %}
+{% block body_js %}
+<script>
+    $(document).on('ready', function() {
+
+if(map){map.remove();}
+if ( $('#map').length ) {
+var map = L.map('map',{maxZoom:20});
+var overlayMaps = Array();
+var streets   = L.tileLayer('http://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
+    attribution: '<a href="https://www.mapbox.com/about/maps/">Terms and Feedback</a>',id: 'mapdatas.map-20v6611k'});
+var baseMaps = {
+    "Streets": streets
+};
+
+    var poly = [];
+var streets = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{
+  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+}).addTo(map);
+
+    $.getJSON("{{url_for('geojsonapi.boundsxy',uid=uid)}}", function(data) {
+        poly = L.polygon(data.geometry.coordinates).addTo(map);
+        map.fitBounds(poly.getBounds());
+    });
+}
+
+    $("#postbtn").click(function() {
+        $("#status").html("Fetching latest OSM Data for given extent ...<br/>" +
+                "This could take a while, so please be patient.");
+        $("#postbtn").attr('disabled');
+
+        var last_response_len = false;
+        $.ajax({type: "POST",
+            url:"{{url_for('devmap.osm_download',uid=uid)}}",
+            data: $("#import").serialize() ,
+            xhrFields: {
+                onprogress: function(e)
+                {
+                    var this_response=1, response = e.currentTarget.response;
+                    if(last_response_len === false)
+                    {
+                        this_response = response;
+                        last_response_len = response.length;
+                    }
+                    else
+                    {
+                        this_response = response.substring(last_response_len);
+                        last_response_len = response.length;
+                    }
+                    var mbytes = this_response/1024.0;
+                    console.log(mbytes);
+                    $("#status").html(mbytes+" MB loaded...");
+                }
+            },
+            success: function(data)
+            {
+                $("#status").append(" Finished!");
+                 window.location.href = "{{url_for('devmap.harmonize',uid=uid)}}";
+            }
+        });
+    });
+    });
+</script>
+{% endblock %}

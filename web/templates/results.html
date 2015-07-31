@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block head %}
+{{ super() }}
+{% endblock %}
+{% block navigation %}
+{{ super() }}
+{% endblock %}
+{% block map %}
+<div class="uk-grid" data-uk-grid-margin>
+    <div class="uk-width-medium-1-1">
+        <div class="uk-text-center">
+            <div id="mappanel" class="uk-panel uk-panel-box"><div id="map" class="uk-panel-teaser uk-panel-box">
+            </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block content %}
+<div class="uk-grid uk-margin-large-bottom uk-margin-large-top" data-uk-grid-margin>
+    <div class="uk-width-medium-1-1">
+        <h2 class="uk-text-center">Generate Results</h2><br>
+        <div class="uk-container-center uk-text-center">Generate results that can be viewed in the online map or exported by WMS.<br>Leave options blank, if you are not interested in WMS export.</div>
+        <h3 id="status" class="uk-text-center">{% if error %} {{ error }} {% endif %}</h3>
+        <h3>Generate Result Grids</h3>
+        <form id="results" class="uk-form">
+            <fieldset data-uk-margin>
+                <dl class="uk-description-list uk-description-list-horizontal">
+                    <dt>Max. Deviation Grid</dt>
+                    <dd>
+                        <input name="maxdevgrid" type="checkbox"> Generate a Grid with maximum positional Deviation per Cell<br>
+                    </dd> <br>
+                    <!--<dt>Featurelength Difference Grid</dt>-->
+                    <!--<dd>-->
+                        <!--<input name="absdevgrid" type="checkbox"> Generate a Grid with absolute Difference in Featurelengths (OSM,REF) per Cell<br>-->
+                    <!--</dd><br>-->
+                    <dt>Matchingrate Grid</dt>
+                    <dd>
+                        <input name="matchingrategrid" type="checkbox"> Generate a Grid with matched to unmatched Referencefeatures-Length Ratio per Cell<br>
+                    </dd><br>
+                    <dt>Grid Cellsize</dt><dd><input name="gridcellsize" type="text" value="500" class="uk-form uk-form-small uk-form-width-mini"> [Meter]</dd>
+                </dl>
+            </fieldset>
+            <h3>Generate Line Results</h3>
+
+            <fieldset data-uk-margin>
+                <dl class="uk-description-list uk-description-list-horizontal">
+                    <dt>Positional Deviation Lines</dt>
+                    <dd><input name="posdevlines" type="checkbox"> Generate positional deviation lines between two matched features every
+                        <input name="posdevlinedist" type="text" value="0.0005" class="uk-form uk-form-small uk-form-width-small"> [Degree]<br>
+                    </dd>
+                    <br>
+                    <!--<dt>Matched Ref Features</dt>-->
+                    <!--<dd>-->
+                        <!--<input name="matchedref" type="checkbox"> Export all Matched Reference Features with a length >-->
+                        <!--<input name="matchedrefminlen" type="text" value="0.0001" class="uk-form uk-form-small uk-form-width-small"> [Degree]<br>-->
+                    <!--</dd><br>-->
+                    <!--<dt>Matched OSM Features</dt>-->
+                    <!--<dd>-->
+                        <!--<input name="matchedosm" type="checkbox"> Export all Matched OSM Features with a length >-->
+                        <!--<input name="matchedosmminlen" type="text" value="0.0001" class="uk-form uk-form-small uk-form-width-small"> [Degree]<br>-->
+                    <!--</dd>-->
+                    <!--<br>-->
+                    <!--<dt>Unmatched Ref Features</dt>-->
+                    <!--<dd>-->
+                        <!--<input name="unmatchedref" type="checkbox"> Export all unmatched Reference Features with a length >-->
+                        <!--<input name="unmatchedrefminlen" type="text" value="0.0001" class="uk-form uk-form-small uk-form-width-small"> [Degree]<br>-->
+                    <!--</dd><br>-->
+                    <!--<dt>Unmatched OSM Features</dt>-->
+                    <!--<dd>-->
+                        <!--<input name="unmatchedosm" type="checkbox"> Export all unmatched OSM Features with a length >-->
+                        <!--<input name="unmatchedosmminlen" type="text" value="0.0001" class="uk-form uk-form-small uk-form-width-small"> [Degree]<br>-->
+                    <!--</dd><br>-->
+
+                    <dt>Min. Levenshteindistance</dt>
+                    <dd>
+                        <input name="minlevenshtein" type="checkbox"> Export all matched Features with Levenshteindistance <=
+                        <input name="minlev" type="text" value="3" class="uk-form uk-form-small uk-form-width-mini">
+                        <br>
+                    </dd><br>
+                    <dt>Max. Levenshteindistance</dt>
+                    <dd>
+                        <input name="maxlevenshtein" type="checkbox"> Export all matched Features with Levenshteindistance >
+                        <input name="maxlev" type="text" value="3" class="uk-form uk-form-small uk-form-width-mini">
+                        <br>
+                    </dd>
+                </dl>
+            </fieldset>
+        </form>
+        <div class="uk-text-center">
+            <a id="processbutton" class="uk-button uk-width-1-4" href="#">Process Data</a> <a class="uk-button uk-width-1-4" href="{{url_for('devmap.delete',uid=uid)}}">Abort and Delete Data</a>
+        </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block offcanvasnav %}
+{{ super() }}
+{% endblock %}
+{% block body_js %}
+<script>
+    $( "#processbutton" ).click(function() {
+
+        $("#status").html("Processing Data...");
+
+        var last_response_len = false;
+        $.ajax({type: "POST",
+            url:"{{url_for('devmap.results',uid=uid)}}",
+            data: $("#results").serialize(),
+            xhrFields: {
+                onprogress: function(e)
+                {
+                    var this_response, response = e.currentTarget.response;
+                    if(last_response_len === false)
+                    {
+                        this_response = response;
+                        last_response_len = response.length;
+                    }
+                    else
+                    {
+                        this_response = response.substring(last_response_len);
+                        last_response_len = response.length;
+                    }
+                    $("#status").html(this_response);
+                }
+            },
+            success: function(data)
+            {
+                window.location.href = "{{url_for('devmap.export',uid=uid)}}";
+            }
+        });
+    });
+</script>
+{% endblock %}

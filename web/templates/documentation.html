@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block head %}
+{{ super() }}
+{% endblock %}
+{% block navigation %}
+{{ super() }}
+{% endblock %}
+{% block content %}
+<div class="uk-container uk-container-center">
+
+                <div class="uk-grid" data-uk-grid-margin>
+                    <div class="tm-sidebar uk-width-medium-1-4 uk-hidden-small">
+
+                        <ul class="tm-nav uk-nav" data-uk-nav>
+
+                            <li class="uk-nav-header">Map Creation</li>
+                            <li><a href="grid.html">File Upload</a></li>
+                            <li><a href="grid.html">File Import</a></li>
+                            <li><a href="panel.html">OSM Download</a></li>
+                            <li><a href="panel.html">Data Harmonization</a></li>
+                            <li><a href="grid.html">Linematching</a></li>
+                            <li><a href="grid.html">WMS Export</a></li>
+
+                            <li class="uk-nav-header">Using Maps</li>
+                            <li><a href="grid.html">Viewing in Browser</a></li>
+                            <li><a href="panel.html">JOSM RemoteControl</a></li>
+                            <li><a href="grid.html">WMS Maps</a></li>
+
+                            <li class="uk-nav-header">Map Management</li>
+                            <li><a href="grid.html">Registration</a></li>
+                            <li><a href="panel.html">Management</a></li>
+                            <li><a href="panel.html">Deleting Maps</a></li>
+
+                        </ul>
+
+                    </div>
+                    <div class="uk-width-medium-3-4">
+
+                        <article class="uk-article">
+
+                            <h1 class="uk-article-title">Documentation</h1>
+
+                            <p class="uk-article-lead">A short documentation on the currently implemented features.</p>
+
+                            <h2 id="usage"><a href="#usage" class="uk-link-reset">Usage</a></h2>
+
+                            <p>More to come.</p>
+                        </article>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+{% endblock %}
+{% block offcanvasnav %}
+{{ super() }}
+{% endblock %}
+{% block body_js %}
+{% endblock %}

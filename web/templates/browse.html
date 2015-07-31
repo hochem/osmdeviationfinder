@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/jquery.dataTables.min.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leaflet.css') }}" />
+<script src="{{ url_for('static', filename='js/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='js/addons/notify.min.js') }}"></script>
+{% endblock %}
+
+{% block navigation %}
+{{ super() }}
+{% endblock %}
+{% block content %}
+<div class="uk-grid" data-uk-grid-margin>
+    <div class="uk-width-medium-1-1">
+        <div class="uk-text-center">
+            <div id="mappanel" class="uk-panel uk-panel-box" style="padding-bottom: 0px">
+                <div id="map" class="uk-panel-teaser uk-panel-box">
+            </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="uk-clearfix uk-margin-large-top">
+
+</div>
+
+<table id="listedmaps" class="display compact"  cellspacing="0" width="100%">
+    <thead>
+    <tr>
+        <th>Title [View Map]</th>
+        <th>Author</th>
+        <th>Reference Source</th>
+        <th>Reference License</th>
+        <th>MapID [Zoom to Map]</th>
+        <!--<th>WMS</th>-->
+
+    </tr>
+    </thead>
+    <tfoot>
+    </tfoot>
+</table>
+{% endblock %}
+
+{% block offcanvasnav %}
+{{ super() }}
+{% endblock %}
+{% block body_js %}
+<script>
+    var table = null;
+        var mapslayer = null;
+        var currentfeat = null, currenttablerow = null;
+        var map = null;
+
+
+    $(document).on('ready', function() {
+
+        map = L.map('map').setView([47.7,14], 7);
+
+        var streets = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{
+  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+}).addTo(map);
+
+        $('#listedmaps').html="";
+
+        $('#listedmaps').dataTable( {
+            "ajax": "{{url_for('jsonapi.listed')}}",
+            "columns": [
+                { "data": "link","sClass": "uk-text-center" },
+                { "data": "username","sClass": "uk-text-center" },
+                { "data": "datasource","sClass": "uk-text-center" },
+                { "data": "datalicense","sClass": "uk-text-center" },
+                { "data": "uid","sClass": "uk-text-center" }
+//                ,{ "data": "wmsurl","sClass": "uk-text-center" }
+            ]
+        });
+
+        table = $('#listedmaps').DataTable();
+
+        jQuery.fn.dataTable.Api.register( 'page.jumpToData()', function ( data, column ) {
+            var pos = this.column(column, {order:'current'}).data().indexOf( data );
+            if ( pos >= 0 ) {
+                var page = Math.floor( pos / this.page.info().length );
+                this.page( page ).draw( false );
+            }
+
+            $('#listedmaps tr').each(function() {
+                if($(this).find("td").eq(column).html()==data)
+                {$(this).addClass('selected');}
+            });
+            return this;
+        } );
+        $('#listedmaps tbody').on( 'click', 'td', function () {
+            if (currentfeat){ currentfeat.setStyle({weight:1});}
+            var cellData = table.cell( this ).data();
+            var pos = table.cell(this).index()
+                mapslayer.eachLayer(function(entry) {
+                    if(entry.feature.properties.uid === table.cell(pos.row, 4 ).data()){
+                        entry.setStyle({
+                            weight: 5
+                        });
+                        console.log(table.cell(pos.row, 4 ).data());
+                        map.fitBounds(entry.getBounds());
+                        currentfeat = entry;
+                    }
+                });
+        } );
+        $('#listedmaps tbody').on( 'click', 'tr', function () {
+            if ( $(this).hasClass('selected') ) {
+                $(this).removeClass('selected');
+            }
+            else {
+                table.$('tr.selected').removeClass('selected');
+                $(this).addClass('selected');
+            }
+        } );
+
+        $.getJSON("{{url_for('geojsonapi.listedbboxes')}}", function(data) {
+
+
+            var referenceStyle = {
+                "color": "#44ff44",
+                "weight": 2,
+                "opacity": 0.6
+            };
+
+            function oneachfeatureref(feature, layer) {
+
+                layer.on('mouseover', function (e) {
+                    layer.setStyle({
+                        weight: 5
+                    });
+                });
+
+                layer.on('mouseout', function (e) {
+                    layer.setStyle({
+                        weight: 2
+                    });
+                });
+
+                layer.on('click', function (e) {
+
+                    map.fitBounds(layer.getBounds());
+                    //console.log(e.target.feature.properties.id);
+                    table = $('#listedmaps').DataTable();
+                    table.rows('.selected').nodes().to$().removeClass('selected');
+                    table.page.jumpToData(e.target.feature.properties.uid,4);
+                });
+            }
+            mapslayer = L.geoJson(data,{
+                style: referenceStyle,
+                onEachFeature: oneachfeatureref
+            }).addTo(map);
+        });
+        });
+</script>
+{% endblock %}

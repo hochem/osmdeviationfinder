@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block head %}
+{{ super() }}
+{% endblock %}
+{% block navigation %}
+{{ super() }}
+{% endblock %}
+{% block map %}
+<div class="uk-grid" data-uk-grid-margin>
+<div class="uk-width-medium-1-1">
+    <div class="uk-text-center">
+        <div id="mappanel" class="uk-panel uk-panel-box"><div id="map" class="uk-panel-teaser uk-panel-box">
+            </div>
+        </div>
+
+    </div>
+</div>
+</div>
+{% endblock %}
+{% block content %}
+<div class="uk-grid uk-margin-large-bottom uk-margin-large-top" data-uk-grid-margin>
+    <div class="uk-width-medium-1-1">
+        <h2 class="uk-text-center">Data Processing and Line Matching</h2>
+        <h3 id="status" class="uk-text-center"></h3>
+
+        <form id="linematch" class="uk-form">
+            <legend>Line Matching Parameters</legend>
+            <dl class="uk-vertical-align-middle uk-description-list-horizontal">
+                <dt>Search radius</dt>
+                <dd><input name="searchradius" type="text" value="{{dm.searchradius2}}" class="uk-form uk-form-width-small"> [Degree] Defines the circular area around a feature that is used to search for potential matching features in the other dataset.</dd>
+
+                <dt>Maximum potential<br>matches per feature</dt><br>
+                <dd><input name="maxpotentialmatches" type="text" value="{{dm.maxpotentialmatches}}" class="uk-form uk-form-width-mini"> The max. number of features to be searched for in the given area.</dd>
+
+                 <dt>Min. feature length</dt><br>
+                <dd><input name="minmatchingfeatlen" type="text" value="{{dm.minmatchingfeatlen}}" class="uk-form uk-form-width-small">[Degree] The minimum length a feature must have to be included in matching process.</dd>
+
+                <dt>Maximum length<br>difference ratio</dt><br>
+                <dd><input name="maxlengthdiffratio" type="text" value="{{dm.maxlengthdiffratio}}" class="uk-form uk-form-width-mini"> The max. length difference ratio between a feature and a potential matching feature.</dd>
+                <dt>Maximum angle<br>difference</dt><br>
+                <dd><input name="maxanglediff" type="text" value="{{dm.maxanglediff}}" class="uk-form uk-form-width-mini"> [Radiant] The max. angle difference in radiants between a feature and a potential matching feature</dd>
+                </dl>
+                <dl id="advanced" class="uk-vertical-align-middle uk-description-list-horizontal uk-hidden">
+                <dt>Positional difference<br>interval</dt><br>
+                <dd><input name="posdiffsegmentlength" type="text" value="{{dm.posdiffsegmentlength}}" class="uk-form uk-form-width-small"> [Degree] Interval between points on line used to calculate the positional difference.</dd>
+
+                <dt>Hausdorff segment<br>length</dt><br>
+                <dd><input name="hausdorffsegmentlength" type="text" value="{{dm.hausdorffsegmentlength}}" class="uk-form uk-form-width-small"> [Degree] The max. length of each segment used to calculate the Hausdorffdistance between two features.</dd>
+
+                <dt>Maximum azimuth<br>difference</dt><br>
+                <dd><input name="maxazimuthdiff" type="text" value="{{dm.maxazimuthdiff}}" class="uk-form uk-form-width-small"> [Radiant] The max. azimuth angle difference between a feature and a potential matching feature</dd>
+
+                <dt>Max. mean positional<br>difference to length<br>ratio</dt><br>
+                <dd><input name="maxmeanposdifftolengthratio" type="text" value="{{dm.maxmeanposdevtolength}}" class="uk-form uk-form-width-mini"> The max. mean positional difference to length ratio between a feature and a potential matching feature</dd>
+
+                <dt>Min. mean positional<br>difference to length<br>ratio</dt><br>
+                <dd><input name="minmeanposdifftolengthratio" type="text" value="{{dm.minmeanposdevtolength}}" class="uk-form uk-form-width-small"> [Degree] The min. positional difference between a feature and a potential matching feature, without respect to feature lengths.</dd>
+            </dl>
+            </fieldset>
+        </form>
+        <div class="uk-text-center">
+            <a class="uk-button uk-width-1-4" href="#" data-uk-toggle="{target:'#advanced'}">Show advanced parameters</a> <a id="processbutton" class="uk-button uk-width-1-4" href="#">Process Data</a> <a class="uk-button uk-width-1-4" href="{{url_for('devmap.delete',uid=uid)}}">Abort and Delete Data</a>
+        </div>
+        </form>
+    </div>
+</div>
+        {% endblock %}
+{% block offcanvasnav %}
+{{ super() }}
+{% endblock %}
+{% block body_js %}
+<script>
+    $( "#processbutton" ).click(function() {
+
+        $("#status").html("Processing Data...");
+
+        var last_response_len = false;
+        $.ajax({type: "POST",
+            url:"{{url_for('devmap.linematch',uid=uid)}}",
+            data: $("#linematch").serialize(),
+            xhrFields: {
+                onprogress: function(e)
+                {
+                    var this_response, response = e.currentTarget.response;
+                    if(last_response_len === false)
+                    {
+                        this_response = response;
+                        last_response_len = response.length;
+                    }
+                    else
+                    {
+                        this_response = response.substring(last_response_len);
+                        last_response_len = response.length;
+                    }
+                    $("#status").html(this_response);
+                }
+            },
+            success: function(data)
+            {
+                  window.location.href = "{{url_for('devmap.results',uid=uid)}}";
+            }
+        });
+    });
+</script>
+{% endblock %}

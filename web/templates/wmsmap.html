@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leaflet.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leaflet.groupedlayercontrol.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/jquery.dataTables.min.css') }}" />
+<script src="{{ url_for('static', filename='js/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='js/leaflet.groupedlayercontrol.js') }}"></script>
+<script src="{{ url_for('static', filename='js/addons/notify.min.js') }}"></script>
+{% endblock %}
+{% block navigation %}
+    {{ super() }}
+{% endblock %}
+{% block content %}
+<div class="uk-grid" data-uk-grid-margin>
+    <div class="uk-width-medium-1-1">
+        <div class="uk-text-center">
+            <div id="mappanel" class="uk-panel uk-panel-box" style="padding-bottom: 0px"><div id="map" class="uk-panel-teaser uk-panel-box">
+            </div>
+            </div>
+            Load WMS-Layers by selecting them in the top right corner of the map.
+            <div id="errormessage" class="uk-alert-danger"></div>
+        </div>
+    </div>
+</div>
+<br>
+{% if dm.uid %}
+                    <table class="uk-table uk-margin-top-remove">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>WMS URL</th>
+                                 <th>JOSM Link</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% if dm.wmsmaxdevgrid %}
+                            <tr>
+                                <td><b>Max. Deviation Grid</b></td>
+                                <td>Shows max. absolute Deviation per Grid Cell</td>
+                                <td><a href="{{baseurl}}">WMS-URL</a></td>
+                                <td><a href="http://127.0.0.1:8111/imagery?title={{dm.title}} - maxdevgrid&type=wms&url={{baseurl}}?SERVICE=WMS&FORMAT=image/png&VERSION=1.1.1&SERVICE=WMS&REQUEST=GetMap&LAYERS=odf_{{dm.uid}}_maxdevgrid&STYLES=&SRS={proj}&WIDTH={width}&HEIGHT={height}&BBOX={bbox}&transparent=true" target="_blank">JOSM Link</a></td>
+
+                            </tr>
+                        {% endif %}
+                        {% if dm.wmsabsdevgrid %}
+                            <tr>
+                                <td><b>Max. Absolute Dev Grid</b></td>
+                                <td>Table</td>
+                                <td><a href="{{baseurl}}">WMS-URL</a></td>
+                                <td><a href="http://127.0.0.1:8111/imagery?title={{dm.title}} - maxdevgrid&type=wms&url={{baseurl}}?SERVICE=WMS&FORMAT=image/png&VERSION=1.1.1&SERVICE=WMS&REQUEST=GetMap&LAYERS=odf_{{dm.uid}}_absdevgrid&STYLES=&SRS={proj}&WIDTH={width}&HEIGHT={height}&BBOX={bbox}&transparent=true" target="_blank">JOSM Link</a></td>
+                            </tr>
+                        {% endif %}
+                        {% if dm.wmsmatchingrategrid %}
+                            <tr>
+                                <td><b>Matchingrate Grid</b></td>
+                                <td>Shows the Ratio of matched to non-matched Referenece Features</td>
+                                <td><a href="{{baseurl}}">WMS-URL</a></td>
+                                <td><a href="http://127.0.0.1:8111/imagery?title={{dm.title}} - maxdevgrid&type=wms&url={{baseurl}}?SERVICE=WMS&FORMAT=image/png&VERSION=1.1.1&SERVICE=WMS&REQUEST=GetMap&LAYERS=odf_{{dm.uid}}_matchingrategrid&STYLES=&SRS={proj}&WIDTH={width}&HEIGHT={height}&BBOX={bbox}&transparent=true" target="_blank">JOSM Link</a></td>
+                            </tr>
+                        {% endif %}
+                        {% if dm.wmsposdevlines %}
+                            <tr>
+                                <td><b>Positional Deviation Lines</b></td>
+                                <td>Shows the Deviation Lines between matched Ref and OSM Features</td>
+                                <td><a href="{{baseurl}}">WMS-URL</a></td>
+                                <td><a href="http://127.0.0.1:8111/imagery?title={{dm.title}} - posdevlines&type=wms&url={{baseurl}}?SERVICE=WMS&FORMAT=image/png&VERSION=1.1.1&SERVICE=WMS&REQUEST=GetMap&LAYERS=odf_{{dm.uid}}_posdevlines&STYLES=&SRS={proj}&WIDTH={width}&HEIGHT={height}&BBOX={bbox}&transparent=true" target="_blank">JOSM Link</a></td>
+                            </tr>
+                        {% endif %}
+                        {% if dm.wmsunmatchedref %}
+                            <tr>
+                                <td><b>Unmatched Ref-Features</b></td>
+                                <td>All unmatched Ref-Features above the defined min. Length</td>
+                                <td><a href="{{baseurl}}">WMS-URL</a></td>
+                                <td><a href="http://127.0.0.1:8111/imagery?title={{dm.title}} - unmatchedref&type=wms&url={{baseurl}}?SERVICE=WMS&FORMAT=image/png&VERSION=1.1.1&SERVICE=WMS&REQUEST=GetMap&LAYERS=odf_{{dm.uid}}_unmatchedref&STYLES=&SRS={proj}&WIDTH={width}&HEIGHT={height}&BBOX={bbox}&transparent=true" target="_blank">JOSM Link</a></td>
+                            </tr>
+                        {% endif %}
+                        {% if dm.wmsunmatchedosm %}
+                            <tr>
+                                <td><b>Unmatched OSM-Features</b></td>
+                                <td>All unmatched OSM-Features above the defined min. Length</td>
+                                <td><a href="{{baseurl}}">WMS-URL</a></td>
+                                <td><a href="http://127.0.0.1:8111/imagery?title={{dm.title}} - unmatchedosm&type=wms&url={{baseurl}}?SERVICE=WMS&FORMAT=image/png&VERSION=1.1.1&SERVICE=WMS&REQUEST=GetMap&LAYERS=odf_{{dm.uid}}_unmatchedosm&STYLES=&SRS={proj}&WIDTH={width}&HEIGHT={height}&BBOX={bbox}&transparent=true" target="_blank">JOSM Link</a></td>
+                            </tr>
+                        {% endif %}
+                        {% if dm.wmsmatchedref %}
+                            <tr>
+                                <td><b>Matched Ref-Features</b></td>
+                                <td>All matched Ref-Features</td>
+                                <td><a href="{{baseurl}}">WMS-URL</a></td>
+                                <td><a href="http://127.0.0.1:8111/imagery?title={{dm.title}} - matchedref&type=wms&url={{baseurl}}?SERVICE=WMS&FORMAT=image/png&VERSION=1.1.1&SERVICE=WMS&REQUEST=GetMap&LAYERS=odf_{{dm.uid}}_matchedref&STYLES=&SRS={proj}&WIDTH={width}&HEIGHT={height}&BBOX={bbox}&transparent=true" target="_blank">JOSM Link</a></td>
+                            </tr>
+                        {% endif %}
+                        {% if dm.wmsmatchedosm %}
+                            <tr>
+                                <td><b>Matched OSM-Features</b></td>
+                                <td>All matched OSM-Features</td>
+                                <td><a href="{{baseurl}}">WMS-URL</a></td>
+                                <td><a href="http://127.0.0.1:8111/imagery?title={{dm.title}} - matchedosm&type=wms&url={{baseurl}}?SERVICE=WMS&FORMAT=image/png&VERSION=1.1.1&SERVICE=WMS&REQUEST=GetMap&LAYERS=odf_{{dm.uid}}_matchedosm&STYLES=&SRS={proj}&WIDTH={width}&HEIGHT={height}&BBOX={bbox}&transparent=true" target="_blank">JOSM Link</a></td>
+                            </tr>
+                        {% endif %}
+                        {% if dm.wmsminlevenshtein %}
+                            <tr>
+                                <td><b>Min. Levenshteindistance</b></td>
+                                <td>All matched Ref-Features below defined Levenshteindistance</td>
+                                <td><a href="{{baseurl}}">WMS-URL</a></td>
+                                <td><a href="http://127.0.0.1:8111/imagery?title={{dm.title}} - minlevenshtein&type=wms&url={{baseurl}}?SERVICE=WMS&FORMAT=image/png&VERSION=1.1.1&SERVICE=WMS&REQUEST=GetMap&LAYERS=odf_{{dm.uid}}_minlevenshtein&STYLES=&SRS={proj}&WIDTH={width}&HEIGHT={height}&BBOX={bbox}&transparent=true" target="_blank">JOSM Link</a></td>
+                            </tr>
+                        {% endif %}
+                        {% if dm.wmsmaxlevenshtein %}
+                            <tr>
+                                <td><b>Min. Levenshteindistance</b></td>
+                                <td>All matched Ref-Features above defined Levenshteindistance</td>
+                                <td><a href="{{baseurl}}">WMS-URL</a></td>
+                                <td><a href="http://127.0.0.1:8111/imagery?title={{dm.title}} - maxlevenshtein&type=wms&url={{baseurl}}?SERVICE=WMS&FORMAT=image/png&VERSION=1.1.1&SERVICE=WMS&REQUEST=GetMap&LAYERS=odf_{{dm.uid}}_maxlevenshtein&STYLES=&SRS={proj}&WIDTH={width}&HEIGHT={height}&BBOX={bbox}&transparent=true" target="_blank">JOSM Link</a></td>
+                            </tr>
+                        {% endif %}
+                        </tbody>
+                    </table>
+ {% else %}
+                        <h4 class="uk-text-center">Es wurden noch keine Karten veröffentlicht.</h4>
+                        <br><br>
+{%endif%}
+
+
+
+{% endblock %}
+{% block offcanvasnav %}
+{{ super() }}
+{% endblock %}
+{% block body_js %}
+<script>
+    var map = L.map('map').setView([47,15], 10);
+    var overlays ={};
+    var boundslayer = null;
+    var legend = L.control({position: 'bottomright'});
+var streets = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{
+  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+}).addTo(map);
+
+     $.getJSON("{{url_for('geojsonapi.boundsyx',uid=uid)}}", function(data) {
+            var referenceStyle = {
+                "color": "#ffffff",
+                "fill":false,
+                "weight": 1,
+                "opacity": 0.0
+            };
+            boundslayer = L.geoJson(data,{
+                style: referenceStyle
+            }).addTo(map);
+         boundslayer.on('tileerror', function(error, tile) {$("#errormessage").text('Error loading bounds layer.');});
+            map.panInsideBounds(boundslayer.getBounds());
+        });
+
+    {% if dm.wmsmaxdevgrid %}
+        var wmsmaxdevgrid = L.tileLayer.wms("{{baseurl}}", {
+            layers: "odf_{{uid}}_maxdevgrid",
+            opacity:0.6,
+             format: 'image/png',
+            transparent: true,
+            version: '1.1.1'
+
+        }).on('tileerror', function(error, tile) {$("#errormessage").text('Error loading max. deviation grid layer. Please make sure that' +
+                        ' GeoServer is running!');});
+            $.extend(overlays,{"Max. Deviation Grid": wmsmaxdevgrid});
+    {% endif %}
+    {% if dm.wmsabsdevgrid %}
+        var wmsabsdevgrid = L.tileLayer.wms("{{baseurl}}", {
+            layers: "odf_{{uid}}_absdevgrid",
+            opacity:0.6,
+             format: 'image/png',
+            transparent: true,
+            version: '1.1.1'
+
+        }).on('tileerror', function(error, tile) {$("#errormessage").text('Error loading abs. deviation grid layer. Please make sure that' +
+                        ' GeoServer is running!');});
+            $.extend(overlays,{"Abs. Deviation Grid": wmsabsdevgrid});
+    {% endif %}
+    {% if dm.wmsmatchingrategrid %}
+        var wmsmatchingrategrid = L.tileLayer.wms("{{baseurl}}", {
+            layers: "odf_{{uid}}_matchingrategrid",
+            opacity:0.6,
+             format: 'image/png',
+            transparent: true,
+            version: '1.1.1'
+
+        }).on('tileerror', function(error, tile) {$("#errormessage").text('Error loading matchingrate grid layer. Please make sure that' +
+                        ' GeoServer is running!');});
+            $.extend(overlays,{"Matchingrate Grid": wmsmatchingrategrid});
+
+legend.onAdd = function (map) {
+var div = L.DomUtil.create('div', 'info legend');
+    div.innerHTML +='<b>Matchingrate Grid</</b><br><img src="http://localhost:8080/geoserver/wms?REQUEST=GetLegendGraphic&VERSION=1.0.0&FORMAT=image/png&WIDTH=20&HEIGHT=20&LAYER=OSMDeviationMaps:odf_{{uid}}_matchingrategrid" alt="legend">';
+return div;
+};
+  legend.addTo(map);
+    {% endif %}
+    {% if dm.wmsposdevlines %}
+        var wmsposdevlines = L.tileLayer.wms("{{baseurl}}", {
+            layers: "odf_{{uid}}_posdevlines",
+            opacity:0.6,
+             format: 'image/png',
+            transparent: true,
+            version: '1.1.1'
+
+        }).on('tileerror', function(error, tile) {$("#errormessage").text('Error loading positional deviation lines layer. Please make sure that' +
+                        ' GeoServer is running!')});
+            $.extend(overlays,{"Positional Deviation Lines": wmsposdevlines});
+    {% endif %}
+    {% if dm.wmsunmatchedref %}
+        var wmsunmatchedref = L.tileLayer.wms("{{baseurl}}", {
+            layers: "odf_{{uid}}_unmatchedref",
+            opacity:0.6,
+             format: 'image/png',
+            transparent: true,
+            version: '1.1.1'
+
+        }).on('tileerror', function(error, tile) {$("#errormessage").text('Error loading unmatched reference layer. Please make sure that' +
+                        ' GeoServer is running!');});
+            $.extend(overlays,{"Unmatched Ref. Features": wmsunmatchedref});
+    {% endif %}
+    {% if dm.wmsunmatchedosm %}
+        var wmsunmatchedosm = L.tileLayer.wms("{{baseurl}}", {
+            layers: "odf_{{uid}}_unmatchedosm",
+            opacity:0.6,
+             format: 'image/png',
+            transparent: true,
+            version: '1.1.1'
+
+        }).on('tileerror', function(error, tile) {$("#errormessage").text('Error loading unmatched osm layer. Please make sure that' +
+                        ' GeoServer is running!');});
+            $.extend(overlays,{"Unmatched OSM Features": wmsunmatchedosm});
+    {% endif %}
+    {% if dm.wmsmatchedref %}
+        var wmsmatchedref = L.tileLayer.wms("{{baseurl}}", {
+            layers: "odf_{{uid}}_matchedref",
+            opacity:0.6,
+             format: 'image/png',
+            transparent: true,
+            version: '1.1.1'
+
+        }).on('tileerror', function(error, tile) {$("#errormessage").text('Error loading matched reference layer. Please make sure that' +
+                        ' GeoServer is running!');});
+            $.extend(overlays,{"Matched Ref. Features": wmsmatchedref});
+    {% endif %}
+    {% if dm.wmsmatchedosm %}
+        var wmsmatchedosm = L.tileLayer.wms("{{baseurl}}", {
+            layers: "odf_{{uid}}_matchedosm",
+            opacity:0.6,
+             format: 'image/png',
+            transparent: true,
+            version: '1.1.1'
+
+        }).on('tileerror', function(error, tile) {$("#errormessage").text('Error loading matched osm layer. Please make sure that' +
+                        ' GeoServer is running!');});
+            $.extend(overlays,{"Matched OSM Features": wmsmatchedosm});
+    {% endif %}
+    {% if dm.wmsminlevenshtein %}
+        var wmsminlevenshtein = L.tileLayer.wms("{{baseurl}}", {
+            layers: "odf_{{uid}}_minlevenshtein",
+            opacity:0.6,
+             format: 'image/png',
+            transparent: true,
+            version: '1.1.1'
+
+        }).on('tileerror', function(error, tile) {$("#errormessage").text('Error loading min. levenshtein layer. Please make sure that' +
+                        ' GeoServer is running!');});
+            $.extend(overlays,{"Min. Levenshtein Features": wmsminlevenshtein});
+    {% endif %}
+    {% if dm.wmsmaxlevenshtein %}
+        var wmsmaxlevenshtein = L.tileLayer.wms("{{baseurl}}", {
+            layers: "odf_{{uid}}_maxlevenshtein",
+            opacity:0.6,
+             format: 'image/png',
+            transparent: true,
+            version: '1.1.1'
+
+        }).on('tileerror', function(error, tile) {$("#errormessage").text('Error loading max. levenshtein layer. Please make sure that' +
+                        ' GeoServer is running!');});
+            $.extend(overlays,{"Max. Levenshtein Features": wmsmaxlevenshtein});
+    {% endif %}
+var layerControl = L.control.layers(null, overlays);
+map.addControl(layerControl);
+</script>
+{% endblock %}
+

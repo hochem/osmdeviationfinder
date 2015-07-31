@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block head %}
+{{ super() }}
+{% endblock %}
+{% block navigation %}
+{{ super() }}
+{% endblock %}
+{% block content %}
+<div class="uk-width-medium-1-1">
+    <h2 class="uk-text-center">An Error occured!</h2>
+    <h3 class="uk-text-center">{{ err }}</h3>
+    {% if detail%}
+    <h2 class="uk-text-center">{{detail}}</h2>
+    {% endif %}
+</div>
+{% endblock %}
+{% block offcanvasnav %}
+{{ super() }}
+{% endblock %}
+{% block body_js %}
+{% endblock %}

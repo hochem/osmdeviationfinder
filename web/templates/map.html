@@ -1,0 +1,559 @@
+{% extends 'base.html' %}
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leaflet.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/leaflet.groupedlayercontrol.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/jquery.dataTables.min.css') }}" />
+<script src="{{ url_for('static', filename='js/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='js/leaflet.groupedlayercontrol.js') }}"></script>
+<script src="{{ url_for('static', filename='js/addons/notify.min.js') }}"></script>
+<style>
+td.highlightosm {background-color: #ff4444 !important;}
+td.highlightref {background-color: #4444ff !important;}
+</style>
+{% endblock %}
+{% block navigation %}
+{{ super() }}
+{% endblock %}
+{% block content %}
+<div class="uk-float-left">Map {{ devmap.title }} by {{devmap.owner.username}}
+<!--<a href="{{devmap.uid}}/wmsmap/">Show WMS-Map and JOSM Links</a> | -->
+</div>
+<div class="uk-float-right"><a id="josmremote" href="#">Activate JOSM Remotecontrol</a></div>
+<div class="uk-grid" data-uk-grid-margin>
+    <div class="uk-width-medium-1-1">
+        <div class="uk-text-center">
+            <div id="mappanel" class="uk-panel uk-panel-box" style="padding-bottom: 0px">
+                <div id="map" class="uk-panel-teaser uk-panel-box">
+            </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="uk-float-left">
+<div style="width:10px;height:10px;background-color:#4444ff;display: inline-block;"></div> Reference Data by {{devmap.datasource|safe}}, License: {{devmap.datalicense|safe}} <br>
+    <div style="width:10px;height:10px;background-color:#ff4444;display: inline-block;"></div> OSM Data &copy; <a href="http://openstreetmap.org/">OpenStreetMap</a>-Contributors, <a href="http://opendatacommons.org/licenses/odbl/1-0/">ODbL</a>, (<a href="http://www.openstreetmap.org/copyright">Copyright</a>)
+    <!--Load <a id="devlineslink" href="#">Deviationvectors</a> | <a id="refjunclink" href="#">REF Junctions</a> | <a id="osmjunclink" href="#">OSM Junctions</a>-->
+</div>
+<div class="uk-float-right">
+<!--Load <a id="devlineslink" href="#">Deviationvectors</a> | <a id="refjunclink" href="#">REF Junctions</a> | <a id="osmjunclink" href="#">OSM Junctions</a>-->
+    Show <a id="tabletoggle" href="#">Unmatched</a>
+</div>
+<br>
+<table id="matchedtable" class="cell-border"  cellspacing="0" width="100%" style="cursor:pointer">
+    <thead>
+    <tr>
+        <th data-uk-tooltip title="ID of Segment of Reference Feature.<br><br>Click cell to view matched Ref. Segment.">Seg. RefID</th>
+        <th  data-uk-tooltip title="ID of Segment of OSM Feature.<br><br>Click cell to view matched OSM Segment.">Seg. OSMID</th>
+        <th  data-uk-tooltip title="ID of Reference Feature before Segmentation.<br><br>Click cell to view original Reference Feature.">Src. RefID</th>
+        <th  data-uk-tooltip title="OSM_ID as used by OpenStreetMap.<br><br>Click cell to view original OSM Feature">OSM_ID</th>
+        <th  data-uk-tooltip title="Streetname of Reference Feature.<br><br>Click cell to view all Reference Features with given Name">Ref Name</th>
+        <th data-uk-tooltip title="Name attribute of OSM Feature.<br><br>Click cell to view all OSM Features with given Name">OSM Name (Way)</th>
+        <th data-uk-tooltip title="Name attribute of OSM Feature.<br><br>Click cell to view all OSM Features with given Name">OSM Name (Relation)</th>
+        <th data-uk-tooltip title="Difference in Length of matched Features as calculated by PostGIS function st_length() for geography type.">Length Diff[m]</th>
+        <th data-uk-tooltip title="Mean positional deviation between matched features. Currently only in degree (epsg:4326), because of performance issues.<br><br>High values show mostly accidantly matched features. This can be used to find missing features.">Geom. Diff[°]*10^-5</th>
+        <th data-uk-tooltip title="Difference in name between two matched features, see Levenshtein distance.<br><br>High values indicate wrong matches (verify by map) or different names caused by errors or different naming conventions.">Name Diff (Way)</th>
+        <th data-uk-tooltip title="Difference in name between two matched features, see Levenshtein distance.<br><br>High values indicate wrong matches (verify by map) or different names caused by errors or different naming conventions.">Name Diff (Relation)</th>
+        <th data-uk-tooltip title="Click to edit OSM-Element in JOSM.">Control</th>
+        <!--<th data-uk-tooltip title="Weighted sum of matching parameters (lengthdiff, azimuthdiff, hausdorffdistance, positional deviation, etc.)">Deviation</th>-->
+
+    </tr>
+    </thead>
+    <tfoot>
+    </tfoot>
+</table>
+<table id="unmatchedtable" class="display uk-hidden" cellspacing="0" width="100%">
+    <thead>
+    <tr>
+        <th data-uk-tooltip title="ID of Segment of Reference Feature">Seg. RefID</th>
+        <th  data-uk-tooltip title="ID of Segment of OSM Feature">Seg. OSMID</th>
+        <th  data-uk-tooltip title="ID of Reference Feature before Segmentation">Src. RefID</th>
+        <th  data-uk-tooltip title="OSM_ID as used by OpenStreetMap">OSMID</th>
+        <th  data-uk-tooltip title="Streetname of Reference Feature">Ref Name</th>
+        <th data-uk-tooltip title="Name attribute of OSM Feature">OSM Name</th>
+        <th data-uk-tooltip title="Difference in Length of matched Features as calculated by PostGIS function st_length() for geography type">Length Diff[m]</th>
+        <th data-uk-tooltip title="Mean positional deviation between matched features. Currently only in degree (epsg:4326), because of performance issues.">Geom. Diff[°]</th>
+        <th data-uk-tooltip title="Difference in name between two matched features, see Levenshtein distance">Name Diff</th>
+        <!--<th data-uk-tooltip title="Weighted sum of matching parameters (lengthdiff, azimuthdiff, hausdorffdistance, positional deviation, etc.)">Deviation</th>-->
+    </tr>
+    </thead>
+    <tfoot>
+    <tr>
+ <th data-uk-tooltip title="ID of Segment of Reference Feature">Seg. RefID</th>
+        <th  data-uk-tooltip title="ID of Segment of OSM Feature">Seg. OSMID</th>
+        <th  data-uk-tooltip title="ID of Reference Feature before Segmentation">Src. RefID</th>
+        <th  data-uk-tooltip title="OSM_ID as used by OpenStreetMap">OSMID</th>
+        <th  data-uk-tooltip title="Streetname of Reference Feature">Ref Name</th>
+        <th data-uk-tooltip title="Name attribute of OSM Feature">OSM Name</th>
+        <th data-uk-tooltip title="Difference in Length of matched Features as calculated by PostGIS function st_length() for geography type">Length Diff[m]</th>
+        <th data-uk-tooltip title="Mean positional deviation between matched features. Currently only in degree (epsg:4326), because of performance issues.">Geom. Diff[°]</th>
+        <th data-uk-tooltip title="Difference in name between two matched features, see Levenshtein distance">Name Diff</th>
+        <!--<th>Deviation</th>-->
+    </tr>
+    </tfoot>
+</table>
+<div id="guide" class="uk-modal">
+    <div class="uk-modal-dialog">
+        <a class="uk-modal-close uk-close"></a>
+        <div class="uk-modal-caption">Short Guide</div>
+        <div class="uk-article">asdf</div>
+    </div>
+</div>
+{% endblock %}
+{% block offcanvasnav %}
+{{ super() }}
+{% endblock %}
+
+{% block body_js %}
+<script>
+var josmremote = false;
+
+$("#josmremote").click(function(){
+    if(josmremote){
+        josmremote=false;
+        table = $('#matchedtable').DataTable();
+        var column = table.column(11).visible(false);
+    }else{
+        var jqxhr = $.get("http://127.0.0.1:8111/version"
+                    , function() {
+                        josmremote=true;
+                        $.UIkit.notify({
+                        message : 'Connected to JOSM RemoteControl',
+                        status  : 'info',
+                        timeout : 3000,
+                        pos     : 'top-center'
+                        });
+                        table = $('#matchedtable').DataTable();
+                        var column = table.column(11).visible(true);
+                    })
+                    .fail(function() {
+                        $.UIkit.notify({
+                        message : 'Failed to connect to JOSM RemoteControl.',
+                        status  : 'info',
+                        timeout : 3000,
+                        pos     : 'top-center'
+                        });
+                     table = $('#matchedtable').DataTable();
+                     var column = table.column(11).visible(false);
+                    });
+    }});
+
+$("#tabletoggle").click(function(){
+    initTable("{{url_for('jsonapi.unmatchedresults',uid=uid)}}");
+});
+
+var map = L.map('map',{maxZoom:18});
+var overlayMaps = Array();
+var streets = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{
+  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+});
+
+
+var basemapAT = L.tileLayer("http://{s}.wien.gv.at/basemap/bmaporthofoto30cm/normal/google3857/{z}/{y}/{x}.jpeg", {
+		subdomains : ['maps', 'maps1', 'maps2', 'maps3', 'maps4'],
+		attribution : '<a href="http://www.basemap.at/" target="_blank">basemap.at</a>, <a href="http://creative commons.org/licenses/by/3.0/at/deed.de" target="_blank">CC-BY 3.0</a>',
+		minZoom : 0,
+		maxZoom: 18
+	});
+
+{% if devmap.basemapwmsurl %}
+var customwmsbasemap = L.tileLayer.wms("{{devmap.basemapwmsurl}}", {
+    layers: '{{devmap.basemapwmslayer}}',
+    format: '{{devmap.basemapwmsformat}}',
+    transparent: true,
+    attribution: "Background: <a href='https://www.tirol.gv.at/data/datenkatalog/geographie-und-planung/orthofoto-tirol/'>Land Tirol - data.tirol.gov.at</a> (<a href='https://www.tirol.gv.at/data/nutzungsbedingungen/'>CC BY 3.0 AT Land Tirol</a>)"
+}).addTo(map);
+{% else %}
+map.addLayer(streets);
+{% endif %}
+
+L.control.scale().addTo(map);
+{% if devmap.basemapwmsurl %}
+var baseMaps = {
+    "Streets": streets,
+    "WMS": customwmsbasemap
+};
+{% else %}
+var baseMaps = {
+    "Streets": streets,
+    "BasemapAt": basemapAT
+};
+{% endif %}
+
+var layerControl = L.control.groupedLayers(baseMaps, null);
+map.addControl(layerControl);
+
+
+//var table = null;
+//var osmlayer = null, reflayer = null, roaddeviationlayer = null, osmjunctions=null, refjunctions=null;
+//var osmlayermap = [],reflayermap = [];
+//var currentfeats = Array(), currenttablerow = null;
+
+$(document).ready(function() {
+initTable("{{url_for('jsonapi.linematchresults',uid=uid)}}");
+});
+
+
+function initTable(tablename)
+{
+var table = null;
+var osmlayer = null, reflayer = null, roaddeviationlayer = null, osmjunctions=null, refjunctions=null;
+var osmlayermap = [],reflayermap = [];
+var currentfeats = Array(), currenttablerow = null;
+
+    $('#matchedtable').dataTable( {
+        "ajax": tablename,
+        "aoColumns": [
+            { "mDataProp": "t1_id","sClass": "uk-text-center" },
+            { "mDataProp": "t2_id","sClass": "uk-text-center" },
+            { "mDataProp": "ref_id","sClass": "uk-text-center" },
+            { "mDataProp": "osm_id","sClass": "uk-text-center" },
+            { "mDataProp": "t1name","sClass": "uk-text-center" },
+            { "mDataProp": "t2name","sClass": "uk-text-center" },
+            { "mDataProp": "t2name2","sClass": "uk-text-center" },
+            { "mDataProp": "lengthdiff","sClass": "uk-text-center" },
+            { "mDataProp": "meanposdev","sClass": "uk-text-center" },
+            { "mDataProp": "levenshteindiff1","sClass": "uk-text-center" },
+            { "mDataProp": "levenshteindiff2","sClass": "uk-text-center" },
+             {
+           "mDataProp": null,
+           "sClass": "uk-text-center",
+           "sDefaultContent": '<a id="josmedit" href="#">JOSMEdit</a>'
+        }
+        ],
+        "bDestroy": true,
+        "scrollY": "200px",
+        "scrollCollapse": true,
+        "paging": false,
+        'bInfiniteScroll': true
+    });
+
+    var lastIdx = null;
+    var table = $('#matchedtable').DataTable();
+
+    $('#matchedtable tbody')
+        .on( 'mouseover', 'td', function () {
+                var tcell = table.cell(this);
+                var colIdx = table.cell(this).index().column;
+                var cclass = '';
+                if(colIdx==0 || colIdx==2 || colIdx==4){
+                    cclass='highlightref'
+                }else
+                {
+                    cclass='highlightosm'
+                }
+                //table.cell(this).addClass('highlight');
+                $(tcell.node()).addClass( cclass );
+        } )
+        .on( 'mouseleave','td', function () {
+                var tcell = table.cell(this);
+                var colIdx = table.cell(this).index().column;
+                var cclass = '';
+                if(colIdx==0 || colIdx==2 || colIdx==4){
+                    cclass='highlightref'
+                }else
+                {
+                    cclass='highlightosm'
+                }
+                 $(tcell.node()).removeClass( cclass );
+        } );
+
+    //table = $('#matchedtable').DataTable();
+    var column = table.column(11).visible(false);
+
+    $('#matchedtable tbody').on( 'click', '#josmedit', function () {
+        var pos = table.row($(this));//.parents('tr') ).data();
+        if(josmremote){
+        var jqxhr = $.get("http://127.0.0.1:8111/load_object?objects=w"+table.cell(pos.row, 3 ).data()+"&addtags=source:name="+"{{devmap.datasource}}|name="+table.cell(pos.row,4).data()
+
+        , function() {
+        $.UIkit.notify({
+        message : 'Added Object to JOSM.',
+        status  : 'info',
+        timeout : 3000,
+        pos     : 'top-center'
+        });
+        })
+        .fail(function() {
+        $.UIkit.notify({
+        message : 'Failed to connect to JOSM RemoteControl.',
+        status  : 'info',
+        timeout : 3000,
+        pos     : 'top-center'
+        });
+        });
+        }
+    } );
+
+    jQuery.fn.dataTable.Api.register( 'page.jumpToData()', function ( data, column ) {
+        //var pos = this.column(column, {order:'current'}).data().indexOf( data );
+        $('#matchedtable tr').each(function() {
+            if($(this).find("td").eq(column).html()==data)
+            {
+                $(this).addClass('selected');
+                $('.dataTables_scrollBody').scrollTop($(this).prop('offsetTop') - $('.dataTables_scrollBody').height()/2);
+
+            }
+        });
+        return this;
+    } );
+
+    $('#matchedtable tbody').on( 'click', 'td', function () {
+        if (currentfeats.length>0){$.each(currentfeats,function( index, value ) { value.setStyle({weight:1});})};
+        var cellData = table.cell( this ).data();
+        var pos = table.cell(this).index();
+        if(pos.column==0){
+             currentfeats=[];
+            reflayer.eachLayer(function(entry) {
+                if(entry.feature.properties.id === cellData){
+                    entry.setStyle({
+                        weight: 5
+                    });
+                    map.fitBounds(entry.getBounds());
+                    //currentfeat = entry;
+                    currentfeats.push(entry);
+                }
+            });
+        }else if(pos.column==1)
+        {  currentfeats=[];
+            osmlayer.eachLayer(function(entry) {
+            if(entry.feature.properties.id === cellData){
+                entry.setStyle({
+                    weight: 5
+                });
+                map.fitBounds(entry.getBounds());
+                //currentfeat = entry;
+                currentfeats.push(entry);
+            }
+        });}
+        else if(pos.column==3)
+        {     currentfeats=[];
+            osmlayer.eachLayer(function(entry) {
+            if(entry.feature.properties.osm_id === cellData){
+                entry.setStyle({
+                    weight: 10
+                });
+                currentfeats.push(entry);
+            }
+        });
+        map.fitBounds(L.featureGroup(currentfeats).getBounds());
+        }
+        else if(pos.column==2)
+        {     currentfeats=[];
+            reflayer.eachLayer(function(entry) {
+            if(entry.feature.properties.old_id === cellData){
+                entry.setStyle({
+                    weight: 10
+                });
+                currentfeats.push(entry);
+            }
+        });
+        map.fitBounds(L.featureGroup(currentfeats).getBounds());
+        }
+        else if(pos.column==4)
+        {     currentfeats=[];
+            reflayer.eachLayer(function(entry) {
+            if(entry.feature.properties.name === cellData){
+                entry.setStyle({
+                    weight: 10
+                });
+                currentfeats.push(entry);
+            }
+        });
+        map.fitBounds(L.featureGroup(currentfeats).getBounds());
+        }
+        else if(pos.column==5)
+        {     currentfeats=[];
+            osmlayer.eachLayer(function(entry) {
+            if(entry.feature.properties.name === cellData){
+                entry.setStyle({
+                    weight: 10
+                });
+                currentfeats.push(entry);
+            }
+        });
+        map.fitBounds(L.featureGroup(currentfeats).getBounds());
+        }
+
+    } );
+    $('#matchedtable tbody').on( 'click', 'tr', function () {
+        if ( $(this).hasClass('selected') ) {
+            $(this).removeClass('selected');
+        }
+        else {
+            table.$('tr.selected').removeClass('selected');
+            $(this).addClass('selected');
+        }
+    } );
+
+    $.getJSON("{{url_for('geojsonapi.referencesplitted',uid=uid)}}", function(data) {
+        var referenceStyle = {
+            "color": "#4444ff",
+            "weight": 2,
+            "opacity": 0.9
+        };
+
+        function oneachfeatureref(feature, layer) {
+
+            layer.on('mouseover', function (e) {
+                layer.setStyle({
+                    weight: 5
+                });
+            });
+
+            layer.on('mouseout', function (e) {
+                layer.setStyle({
+                    weight: 2
+                });
+            });
+
+            layer.on('click', function (e) {
+
+                map.fitBounds(layer.getBounds());
+                //console.log(e.target.feature.properties.id);
+                table = $('#matchedtable').DataTable();
+                table.rows('.selected').nodes().to$().removeClass('selected');
+                table.page.jumpToData(e.target.feature.properties.id,0);
+            });
+        }
+
+        reflayer = L.geoJson(data,{
+            style: referenceStyle,
+            onEachFeature: oneachfeatureref
+        }).addTo(map);
+        map.fitBounds(reflayer.getBounds());
+        layerControl.addOverlay(reflayer, "Reference", "Splittedlines");
+    }).fail(function() {$.UIkit.notify({
+                        message : 'Error loading geojson data for reference lines layer.',
+                        status  : 'info',
+                        timeout : 3000,
+                        pos     : 'top-center'
+                        });});
+
+
+    $.getJSON("{{url_for('geojsonapi.osmsplitted',uid=uid)}}", function(data) {
+        var osmStyle = {
+            "color": "#ff4444",
+            "weight": 2,
+            "opacity": 0.9
+        };
+
+        function oneachfeatureosm(feature, layer) {
+
+            layer.on('mouseover', function (e) {
+                layer.setStyle({
+                    weight: 5
+                });
+            });
+
+            layer.on('mouseout', function (e) {
+                layer.setStyle({
+                    weight: 2
+                });
+            });
+
+
+            layer.on('click', function (e) {
+
+                map.fitBounds(layer.getBounds());
+                table = $('#matchedtable').DataTable();
+                table.rows('.selected').nodes().to$().removeClass('selected');
+                table.page.jumpToData(e.target.feature.properties.id,1);
+            });
+        }
+
+        osmlayer = L.geoJson(data,{
+            style: osmStyle,
+            onEachFeature: oneachfeatureosm
+        }).addTo(map);
+        layerControl.addOverlay(osmlayer, "OSM", "Splittedlines");
+    }).fail(function() {$.UIkit.notify({
+                        message : 'Error loading geojson data for OSM lines layer.',
+                        status  : 'info',
+                        timeout : 3000,
+                        pos     : 'top-center'
+                        });});
+
+    $('#osmjunclink').on( 'click', function () {
+        $.getJSON("{{url_for('geojsonapi.osmjunctions',uid=uid)}}", function(data) {
+            var osmStyle = {
+                "color": "#ff4444",
+                "opacity": 0.9
+            };
+
+            var osmMarkerOptions = {
+                radius: 2,
+                fillColor: "#ff7800",
+                color: "#000",
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            };
+
+            osmjunctions = L.geoJson(data,{
+                pointToLayer: function (feature, latlng) {
+                    return L.circleMarker(latlng, osmMarkerOptions);
+                }
+            }).addTo(map);
+            layerControl.addOverlay(osmjunctions, "OSM", "Kreuzungen");
+        }).fail(function() {$.UIkit.notify({
+                        message : 'Error loading geojson data for OSM junctions layer.',
+                        status  : 'info',
+                        timeout : 3000,
+                        pos     : 'top-center'
+                        });});});
+
+    $('#refjunclink').on( 'click', function () {
+        $.getJSON("{{url_for('geojsonapi.referencejunctions',uid=uid)}}", function(data) {
+            var osmStyle = {
+                "color": "#ff4444",
+                "opacity": 0.9
+            };
+
+            var refMarkerOptions = {
+                radius: 2,
+                fillColor: "#4444ff",
+                color: "#000",
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            };
+            refjunctions = L.geoJson(data,{
+                pointToLayer: function (feature, latlng) {
+                    return L.circleMarker(latlng, refMarkerOptions);
+                }
+            }).addTo(map);
+            layerControl.addOverlay(refjunctions, "Referenz", "Kreuzungen");
+        }).fail(function() {$.UIkit.notify({
+                        message : 'Error loading geojson data for reference junctions layer.',
+                        status  : 'info',
+                        timeout : 3000,
+                        pos     : 'top-center'
+                        });});
+    });
+
+    $('#devlineslink').on( 'click', function () {
+        $.getJSON("{{url_for('geojsonapi.deviationlines',uid=uid)}}", function(data) {
+            var deviationlineslayerstyle = {
+                "color": "#4444ff",
+                "weight": 2,
+                "opacity": 0.9
+            };
+            deviationlineslayer = L.geoJson(data,{
+                style: deviationlineslayerstyle
+            }).addTo(map);
+            layerControl.addOverlay(deviationlineslayer, "Deviation Lines", "Abweichungen");
+        }).fail(function() {$.UIkit.notify({
+                        message : 'Error loading geojson data for deviation lines layer.',
+                        status  : 'info',
+                        timeout : 3000,
+                        pos     : 'top-center'
+                        });});
+    });
+}
+
+
+
+</script>
+{% endblock %}

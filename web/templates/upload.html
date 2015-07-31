@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block head %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/addons/upload.min.js') }}"></script>
+{% endblock %}
+{% block navigation %}
+{{ super() }}
+{% endblock %}
+{% block content %}
+
+<br/><h2 class="uk-text-center">Create Your Own Deviation Map</h2><br><br>
+<div id="upload-drop" class="uk-placeholder uk-text-center">
+    <i class="uk-icon-cloud-upload uk-icon-medium uk-text-muted uk-margin-small-right"></i> Attach Shapefile Archives by dropping them here or <a class="uk-form-file">selecting one<input name="file" id="upload-select" type="file"></a>.
+</div>
+
+<div id="progressbar" class="uk-progress uk-hidden">
+    <div class="uk-progress-bar" style="width: 0%;">0%</div>
+</div>
+
+<script>
+    $(function(){
+        var progressbar = $("#progressbar"),
+                bar         = progressbar.find('.uk-progress-bar'),
+                settings    = {
+
+                    action: '/upload', // upload url
+
+                    allow : '*.(zip|rar|json)', // allow only
+
+                    loadstart: function() {
+                        bar.css("width", "0%").text("0%");
+                        progressbar.removeClass("uk-hidden");
+                    },
+
+                    progress: function(percent) {
+                        percent = Math.ceil(percent);
+                        bar.css("width", percent+"%").text(percent+"%");
+                    },
+
+                    allcomplete: function(response) {
+
+                        bar.css("width", "100%").text("100%");
+
+                        setTimeout(function(){
+                            progressbar.addClass("uk-hidden");
+                        }, 250);
+                          window.location.href = response;
+                    }
+                };
+
+        var select = $.UIkit.uploadSelect($("#upload-select"), settings),
+                drop   = $.UIkit.uploadDrop($("#upload-drop"), settings);
+    });
+
+</script>
+<br/><br/>
+{% endblock %}
+{% block offcanvasnav %}
+{{ super() }}
+{% endblock %}
+{% block body_js %}
+{% endblock %}

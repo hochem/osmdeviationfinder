@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block head %}
+{{ super() }}
+{% endblock %}
+{% block navigation %}
+{{ super() }}
+{% endblock %}
+{% block content %}
+<div class="uk-grid uk-margin-large-bottom uk-margin-large-top" data-uk-grid-margin>
+    <div class="uk-width-medium-1-1">
+        <h2 class="uk-text-center">Data Processing and Line Matching</h2>
+        <h3 id="status" class="uk-text-center"></h3>
+        <form id="harmonize" class="uk-form">
+            <legend>Line Segmentation</legend>
+            <fieldset data-uk-margin>
+                <dl class="uk-description-list-horizontal">
+                    <dt>Ref. Name Column</dt>
+                <dd><select id="streetnamecolselect" name="streetnamecol" class="uk-form uk-form-width-medium">
+                {% for column in namecolumns %}
+                <option {% if dm.streetnamecol==column[0].decode('utf-8') %} selected="selected" {% endif %}>{{ column[0].decode('utf-8')|safe}}</option>
+                {% else %}
+                <option>NoNameCol</option>
+                {% endfor %}
+                </select><br><br>Select the column that contains the streetnames of your features.<br>This column will
+                    be used to calculate the difference (Levenshtein distance) in streetnames between two matched features.
+                    <br>Only text columns are selectable. If your dataset doesn't contain streetnames, select NoNames.</dd><br>
+                    </dl>
+                    <dl id="advanced" class="uk-description-list-horizontal uk-hidden">
+                    <dt>Harmonization</dt>
+                    <dd> <input name="harmonize" type="checkbox" {% if dm.harmonize %} checked {% endif %}  id="form-s-c11"><label for="form-s-c11">Harmonize Datasets</label><br></dd><br>
+                    <dt>Clean Datasets</dt>
+                    <dd> <input name="cleanosm" type="checkbox" {% if dm.cleanref %} checked {% endif %} id="form-s-c11"><label for="form-s-c11"> Clean OSM data</label><br></dd>
+                    <dd> <input name="cleanref" type="checkbox" {% if dm.cleanosm %} checked {% endif %} id="form-s-c12"><label for="form-s-c12"> Clean Reference data</label><br>
+                    <input name="cleandistance" type="text" value="{{ dm.cleanrefradius}}" class="uk-margin-small-top" id="form-s-c16"><label for="form-s-c16"> Cleaning Distance</label><br>
+                        This will clean the geometry of a dataset by the given distances. Non intersecting endpoints in short distance to a line or junction will be corrected to intersect at the line or junction. </dd>
+                    <dt>Presplit datasets</dt>
+                    <dd> <input name="presplitosm" type="checkbox" {% if dm.presplitosm %} checked {% endif %} id="form-s-c11"><label for="form-s-c11"> Presplit OSM Layer</label><br></dd>
+                    <dd> <input name="presplitref" type="checkbox" {% if dm.presplitref %} checked {% endif %} id="form-s-c12"><label for="form-s-c12"> Presplit Reference Layer</label><br>Lines will be splitted on every intersection before the actual splitting/harmonization. By presplitting the lines in both datasets, a better result is achievable.</dd>
+                    <dt>Junction matching</dt>
+                    <dd><input name="searchradius" type="text" value="{{ dm.searchradius}}" class="uk-margin-small-top" id="form-s-c16"><label for="form-s-c16"> Distance to search for in degree.</label><br></dd>
+                    <dd><input name="azimuthdifftolerance" type="text" value="{{ dm.azimuthdifftolerance }}" class="uk-margin-small-top" id="form-s-c16"><label for="form-s-c16"> Max. difference of azimuth between two junctionpoints.</label><br></dd>
+                    <dd><input name="maxcheckpointanglediff" type="text" value="{{ dm.maxcheckpointanglediff }}" class="uk-margin-small-top" id="form-s-c16"><label for="form-s-c16"> Max. difference of angle between two checkpoints</label><br></dd>
+                    <br>
+                </dl>
+            </fieldset>
+        </form>
+        <div class="uk-text-center">
+            <a class="uk-button uk-width-1-4" href="#" data-uk-toggle="{target:'#advanced'}">Show advanced parameters</a> <a id="processbutton" class="uk-button uk-width-1-4" href="#">Process Data</a> <a class="uk-button uk-width-1-4" href="{{url_for('devmap.delete',uid=uid)}}">Abort and Delete Data</a>
+        </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block offcanvasnav %}
+{{ super() }}
+{% endblock %}
+{% block body_js %}
+<script>
+    $( "#processbutton" ).click(function() {
+
+        $("#status").html("Processing Data...");
+
+        var last_response_len = false;
+        $.ajax({type: "POST",
+            url:"{{url_for('devmap.harmonize',uid=uid)}}",
+            data: $("#harmonize").serialize(),
+            xhrFields: {
+                onprogress: function(e)
+                {
+                    var this_response, response = e.currentTarget.response;
+                    if(last_response_len === false)
+                    {
+                        this_response = response;
+                        last_response_len = response.length;
+                    }
+                    else
+                    {
+                        this_response = response.substring(last_response_len);
+                        last_response_len = response.length;
+                    }
+                    $("#status").html(this_response);
+                }
+            },
+            success: function(data)
+            {
+                window.location.href = "{{url_for('devmap.linematch',uid=uid)}}";
+            }
+        });
+    });
+</script>
+{% endblock %}

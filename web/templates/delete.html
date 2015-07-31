@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block head %}
+{{ super() }}
+{% endblock %}
+{% block navigation %}
+{{ super() }}
+{% endblock %}
+{% block map %}
+{% endblock %}
+{% block content %}
+<div class="uk-grid uk-margin-large-bottom uk-margin-large-top" data-uk-grid-margin>
+    <div class="uk-width-medium-1-1">
+        <h2 class="uk-text-center">Delete</h2>
+        <h3 id="status" class="uk-text-center">{% if error %} {{ error }} {% endif %}</h3>
+        <form id="delete" method="post" action="{{url_for('devmap.delete',uid=uid)}}" class="uk-form">
+            <h3>WMS-Layers</h3>
+            <fieldset data-uk-margin>
+                <dl class="uk-description-list uk-description-list-horizontal">
+
+                    {% if dm.wmsmaxdevgrid %}
+                    <dt>Max. Deviation Grid</dt>
+                    <dd>
+                        <input name="deletemaxdevgrid" type="checkbox"> Delete WMS-Layer Max. Deviation Grid</label><br>
+                    </dd><br>
+                    {% endif %}
+                    {% if dm.wmsabsdevgrid %}
+                    <dt>Featurelength Difference Gr</dt>
+                    <dd>
+                        <input name="deleteabsdevgrid" type="checkbox"> Delete WMS-Layer Featurelength Difference Grid</label><br>
+                    </dd><br>
+                    {% endif %}
+                    {% if dm.wmsmatchingrategrid %}
+                    <dt>Matchingrate Grid</dt>
+                    <dd>
+                        <input name="deletematchingrategrid" type="checkbox"> Delete WMS-Layer Matchingrate Grid</label><br>
+                    </dd><br>
+                    {% endif %}
+                    {% if dm.wmsposdevlines %}
+                    <dt>Positional Deviation Lines</dt>
+                    <dd>
+                        <input name="deleteposdevlines" type="checkbox"> Delete WMS-Layer Positional Deviation Lines</label><br>
+                    </dd><br>
+                    {% endif %}
+                    {% if dm.wmsunmatchedref %}
+                    <dt>Unmatched Ref Features</dt>
+                    <dd>
+                        <input name="deleteunmatchedref" type="checkbox"> Delete WMS-Layer unmatched Ref Features</label><br>
+                    </dd><br>
+                    {% endif %}
+                    {% if dm.wmsunmatchedosm %}
+                    <dt>Unmatched OSM Features</dt>
+                    <dd>
+                        <input name="deleteunmatchedosm" type="checkbox"> Delete WMS-Layer unmatched OSM Features</label><br>
+                    </dd><br>
+                    {% endif %}
+                    {% if dm.wmsmatchedref %}
+                    <dt>Unmatched Ref Features</dt>
+                    <dd>
+                        <input name="deletematchedref" type="checkbox"> Delete WMS-Layer Matched Ref Features</label><br>
+                    </dd><br>
+                    {% endif %}
+                    {% if dm.wmsmatchedosm %}
+                    <dt>Unmatched OSM Features</dt>
+                    <dd>
+                        <input name="deletematchedosm" type="checkbox"> Delete WMS-Layer Matched OSM Features</label><br>
+                    </dd><br>
+                    {% endif %}
+                    {% if dm.wmsminlevenshtein %}
+                    <dt>Min. Levenshteindistance</dt>
+                    <dd>
+                        <input name="deleteminlevenshtein" type="checkbox"> Delete WMS-Layer Min. Levenshteindistance</label><br>
+                    </dd><br>
+                    {% endif %}
+                    {% if dm.wmsmaxlevenshtein %}
+                    <dt>Max. Levenshteindistance</dt>
+                    <dd>
+                        <input name="deletemaxlevenshtein" type="checkbox"> Delete WMS-Layer Max. Levenshteindistance</label><br>
+                    </dd><br>
+                    {% endif %}
+                </dl>
+            </fieldset>
+            <h3>Delete All</h3>
+            <fieldset data-uk-margin>
+                <dl class="uk-description-list uk-description-list-horizontal">
+                    <dt>Delete All</dt>
+                    <dd>
+                        <input name="deleteall" type="checkbox"> This Option will delete ALL Files, Tables and WMS-Layers </label>
+                        <br>
+                    </dd>
+                </dl>
+            </fieldset>
+        </form>
+        <div class="uk-text-center">
+            <a id="exportbutton" class="uk-button uk-width-1-4" href="#">Delete Data</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block offcanvasnav %}
+{{ super() }}
+{% endblock %}
+{% block body_js %}
+<script>
+    $( "#exportbutton" ).click(function() {
+        $("#delete").trigger("submit");
+    });
+</script>
+{% endblock %}
