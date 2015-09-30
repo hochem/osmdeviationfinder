@@ -37,10 +37,6 @@ def index():
 def about():
     return render_template('about.html')
 
-@basic.route('/documentation', methods=['POST', 'GET'])
-def documentation():
-    return render_template('documentation.html')
-
 @basic.route('/browse', methods=['POST', 'GET'])
 def browse():
     return render_template('browse.html')

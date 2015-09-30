@@ -1,7 +1,7 @@
 OSM Deviation Finder
 ==================================
 
-A tool to find geometrical and thematic deviations between the features of a shapefile containing road data
+A tool to find geometric and thematic deviations between reference road data
 and the latest OpenStreetMap road data.
 
 It's basically a library containing a collection of PostgreSQL/PostGIS queries and a web interface.
@@ -34,7 +34,6 @@ It should only be used to find and visualize deviations between two datasets!
   - PostGIS 2.1.x
   - GDAL/OGR 1.10.x
   - GeoServer
-
   - Python-Packages (using virtualenv recommended):
     - Flask>=0.10
     - Jinja2>=2.4
@@ -50,6 +49,31 @@ It should only be used to find and visualize deviations between two datasets!
     - GDAL>=1.10.0
 
 Tested on Apple OSX 10.9.5
+
+## Vagrant Box
+The easiest way to get it up and running:
+Install [Vagrant](https://www.vagrantup.com "Vagrant") and [Virtualbox](https://www.virtualbox.org "Virtualbox") as Provider
+
+1. Add the box (570MB):
+vagrant box add osmdeviationfinder_ubuntu  http://dl.dropboxusercontent.com/s/8dc709laairnh2o/osmdeviationfinder_ubuntu.box
+
+2. Run the following command in a folder where you want to init the box:
+vagrant init osmdeviationfinder_ubuntu
+
+3. Create a forwarded port mapping by adding this line to the Vagrantfile:
+config.vm.network "forwarded_port", guest: 5000, host: 5000
+
+4. Start up the box:
+vagrant up
+
+5. Connect to the box:
+vagrant ssh
+
+6. To startup the osmdeviantionfinder web application run:
+./start_odf.sh
+
+This will set the virtualenvironemt for python and run the flask app.
+You can use the app on your host machine by visiting http://127.0.0.1:5000 in your browser
 
 ## Sample Data
 

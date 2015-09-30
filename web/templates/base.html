@@ -62,9 +62,6 @@
                         <li>
                             <a href="{{url_for('basic.browse')}}">Browse Deviation Maps</a>
                         </li>
-                        <li>
-                            <a href="{{url_for('basic.documentation')}}">Documentation</a>
-                        </li>
                         {% if current_user.is_authenticated() %}
                          <li>
                             <a href="{{url_for('basic.manage')}}">Manage Maps</a>
