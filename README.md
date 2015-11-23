@@ -9,6 +9,10 @@ It can be used locally and is intended to be used as a webservice in future vers
 Currently it lacks some necessary security- and usermanagement features and
 therefore it shouldn't be used as a webservice!
 
+The follwing gif shows the web interface and how it is used to identify differences in street names of matched road segements from two different datasets.
+
+![Screencapture GIF](osmdf.gif)
+
 The OSM Deviation Finder allows you to:
   - Import reference road data from shapefiles (in EPSG:4326) in to a PostgreSQL/PostGIS Database and automatically
     converts multigeometry features to new single features while keeping streetname and source feature id
@@ -55,25 +59,28 @@ The easiest way to get it up and running:
 Install [Vagrant](https://www.vagrantup.com "Vagrant") and [Virtualbox](https://www.virtualbox.org "Virtualbox") as Provider
 
 1. Add the box (570MB):
-vagrant box add osmdeviationfinder_ubuntu  http://dl.dropboxusercontent.com/s/8dc709laairnh2o/osmdeviationfinder_ubuntu.box
+`vagrant box add osmdeviationfinder_ubuntu http://dl.dropboxusercontent.com/s/8dc709laairnh2o/osmdeviationfinder_ubuntu.box`
 
 2. Run the following command in a folder where you want to init the box:
-vagrant init osmdeviationfinder_ubuntu
+`vagrant init osmdeviationfinder_ubuntu`
 
 3. Create a forwarded port mapping by adding this line to the Vagrantfile:
-config.vm.network "forwarded_port", guest: 5000, host: 5000
+`config.vm.network "forwarded_port", guest: 5000, host: 5000`
 
 4. Start up the box:
-vagrant up
+`vagrant up`
 
 5. Connect to the box:
-vagrant ssh
+`vagrant ssh`
 
 6. To startup the osmdeviantionfinder web application run:
-./start_odf.sh
+`./start_odf.sh`
 
 This will set the virtualenvironemt for python and run the flask app.
-You can use the app on your host machine by visiting http://127.0.0.1:5000 in your browser
+You can use the app on your host machine by visiting [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser
+
+## Thesis
+The thesis (in german) is included in this repo and can be downloaded under the following link [thesis.pdf (40MB)](https://github.com/hochem/osmdeviationfinder/raw/master/thesis/thesis.pdf)
 
 ## Sample Data
 
