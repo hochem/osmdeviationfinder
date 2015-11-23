@@ -66,7 +66,7 @@ def manage():
                              'concat(\'<a href="/\',dm.uid,\'/osmdownload">OSM Download</a>|\''
                              ',\'<a href="/\',dm.uid,\'/harmonize">Harmonize</a>|\',\'<a href="/\',dm.uid,'
                              '\'/linematch">Linematch</a>\', \'|<a href="/\',dm.uid,\'/results">Results</a>\''
-                             ', \'|<a href="/\',dm.uid,\'/delte">Delete</a>\') as editurls '
+                             ', \'|<a href="/\',dm.uid,\'/delete">Delete</a>\') as editurls '
                              'FROM dev_map dm,public.user u '
                              'where u.id = dm.user_id) As f ) As fc;').fetchone()
         else:
@@ -78,7 +78,7 @@ def manage():
                              'concat(\'<a href="/\',dm.uid,\'/osmdownload">OSM Download</a>|\''
                              ',\'<a href="/\',dm.uid,\'/harmonize">Harmonize</a>|\',\'<a href="/\',dm.uid,'
                              '\'/linematch">Linematch</a>\', \'|<a href="/\',dm.uid,\'/results">Results</a>\''
-                             ', \'|<a href="/\',dm.uid,\'/delte">Delete</a>\') as editurls '
+                             ', \'|<a href="/\',dm.uid,\'/delete">Delete</a>\') as editurls '
                              'FROM dev_map dm, public.user u '
                              'where u.id = '+str(current_user.id)+
                              ' and dm.user_id='+str(current_user.id)+') As f ) As fc;').fetchone()
